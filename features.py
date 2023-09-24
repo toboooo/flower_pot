@@ -1,7 +1,10 @@
+import numpy as np
 import rdkit
 from rdkit import Chem
 from rdkit import AllChem
-from rdkit.Chem import Descriptors, rdFreeSASA, Descriptors3D
+from rdkit.Chem import Descriptors, rdFreeSASA
+from rdkit.Chem.rdMolDescriptors import CalcAUTOCORR3D, CalcRDF, CalcMORSE, CalcWHIM, CalcGETAWAY
+from rdkit.Chem.Descriptors3D import *
 
 def get_mol_list(smiles_strings):
 	mols = []
@@ -37,3 +40,16 @@ def get_fingerprints(mols, radius=2, fp_length=2048):
 		Chem.DataStructs.ConvertToNumpyArray(fingerprint, fp_array)
 		fingerprints_array[m] = fp_array
 	return fingerprints_array
+
+def get_3d_descriptors(mols, mmff_optimise=False):
+	descriptors = []
+	functions = [Asphericity, Eccentricity, InertialShapeFactor, NPR1, NPR2, PMI1, PMI2, PMI3, RadiusOfGyration, SpherocityIndex, CalcAUTOCORR3D, CalcRDF, CalcMORSE, CalcWHIM, CalcGETAWAY]
+	for mol in mols:
+		mol3d = Chem.AddHs(mol)
+		AllChem.EmbedMolecule(mol3d)
+		if mmff_optimise:
+			AllChem.MMFFOptimizeMolecule(mol3d)
+		descriptors.append([function(mol3d) for function in functions])
+	descriptor_array = np.array(descriptors)
+	to_keep = ~np.all(descriptor_array == descriptor_array[0,:], axis=0)
+	return descriptor_array[:,to_keep]
