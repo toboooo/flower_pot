@@ -45,7 +45,7 @@ def select_features(mols, y, parameter_ranges, classification=False):
 		descriptor_transformer = ColumnTransformer([("standard_scaler", StandardScaler(), np.arange(descriptor_set.shape[1]))], remainder="passthrough")
 		descriptor_sets[i] = descriptor_transformer.fit_transform(descriptor_set)
 	descriptor_sets += [np.hstack((descriptor_sets[0], descriptor_sets[1])), np.hstack((descriptor_sets[0], descriptor_sets[2])), np.hstack((descriptor_sets[1], descriptor_sets[2])), np.hstack((descriptor_sets[0], descriptor_sets[1], descriptor_sets[2]))]
-	descriptor_names = ["descriptors", "fingerprints", "3d", "descriptors+fingerprints, "descriptors+3d", "fingerprints+3d", "descriptors+fingerprints+3d"]
+	descriptor_names = ["descriptors", "fingerprints", "3d", "descriptors+fingerprints", "descriptors+3d", "fingerprints+3d", "descriptors+fingerprints+3d"]
 	for X, name in zip(descriptor_sets, descriptor_names):
 		X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, shuffle=False)
 		best_model, best_score, best_hyperparameters = select_model(X_train, X_test, y_train, y_test, classification=classification)
