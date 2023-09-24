@@ -22,7 +22,7 @@ def model_test(model, X_train, X_test, y_train, y_test, parameter_ranges, classi
 	if classification:
 		score = balanaced_accuracy_score(predictions, y_test)
 	else:
-		score = mean_absolute_error(predictions, y_test)
+                score = mean_absolute_error(predictions, y_test)
 	return score, search_result.best_params_
 
 def select_model(X_train, X_test, y_train, y_test, classification=False):
@@ -42,6 +42,8 @@ def select_features(mols, y, parameter_ranges, classification=False):
 	descriptors_3d = get_3d_descriptors(mols)
 	descriptor_sets = [descriptors, fingerprints, descriptors_3d]
 	for i, descriptor_set in enumerate(descriptor_sets):
+		if i == 1:
+			continue
 		descriptor_transformer = ColumnTransformer([("standard_scaler", StandardScaler(), np.arange(descriptor_set.shape[1]))], remainder="passthrough")
 		descriptor_sets[i] = descriptor_transformer.fit_transform(descriptor_set)
 	descriptor_sets += [np.hstack((descriptor_sets[0], descriptor_sets[1])), np.hstack((descriptor_sets[0], descriptor_sets[2])), np.hstack((descriptor_sets[1], descriptor_sets[2])), np.hstack((descriptor_sets[0], descriptor_sets[1], descriptor_sets[2]))]
