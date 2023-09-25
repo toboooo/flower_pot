@@ -132,7 +132,7 @@ class MLPDropoutClassifier(MLPClassifier):
 			self._compute_loss_grad(i - 1, n_samples, activations, deltas, coef_grads, intercept_grads)
 		if dropout_masks != None:
 			for layer in range(len(coef_grads) - 1):
-				mask = (~(dropout_masks[layer+1 == 0)).astype(int)
+				mask = (~(dropout_masks[layer+1] == 0)).astype(int)
 				coef_grads[layer] = coef_grads[layer] * mask[None,:]
 				coef_grads[layer+1] = coef_grads[layer+1] * mask.reshape(-1,1)
 				intercept_grads[layer] = intercept_grads[layer] * mask
