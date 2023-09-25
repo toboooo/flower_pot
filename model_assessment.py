@@ -28,10 +28,10 @@ def model_test(model, X_train, X_test, y_train, y_test, parameter_ranges, classi
 def select_model(X_train, X_test, y_train, y_test, classification=False):
 	if classification:
 		models = [RandomForestClassifier, SVC, MLPDropoutClassifier]
-		parameter_ranges_list = [{"n_estimators": [50, 100, 200], "max_depth": [5, 10, 20], "min_samples_leaf": [5, 20, 100], "max_features": [0.2, 0.5, 0.8]}, {"kernel": ["linear", "rbf", "sigmoid"], "C": [0.001, 0.1, 1.0, 10.0], "gamma": [0.001, 0.1, 1.0, 10.0]}, {"hidden_layer_sizes": [(256, 256), (512, 512), (1024, 1024), (2048, 2048), (256, 256, 256, 256), (512, 512, 512, 512)], "alpha": [0.0, 1e-6, 1e-5, 1e-4], "learning_rate": [0.01, 0.05, 0.1], "dropout_rate": [0.0, 0.2, 0.5]}]
+		parameter_ranges_list = [{"n_estimators": [50, 100, 200], "max_depth": [5, 10, 20], "min_samples_leaf": [5, 20, 100], "max_features": [0.2, 0.5, 0.8]}, {"kernel": ["linear", "rbf", "sigmoid"], "C": [0.001, 0.1, 1.0, 10.0], "gamma": [0.001, 0.1, 1.0, 10.0]}, {"hidden_layer_sizes": [(256, 256), (512, 512), (1024, 1024), (2048, 2048), (256, 256, 256, 256), (512, 512, 512, 512)], "alpha": [0.0, 1e-6, 1e-5, 1e-4], "learning_rate": [0.01, 0.05, 0.1], "dropout_rate": [None, 0.2, 0.5]}]
 	else:
 		models = [RandomForestRegressor, SVR, MLPDropoutRegressor]
-		parameter_ranges_list = [{"n_estimators": [50, 100, 200], "max_depth": [5, 10, 20], "min_samples_leaf": [5, 20, 100], "max_features": [0.2, 0.5, 0.8]}, {"kernel": ["linear", "rbf", "sigmoid"], "C": [0.001, 0.1, 1.0, 10.0], "gamma": [0.001, 0.1, 1.0, 10.0], "epsilon": [0.001, 0.1, 1.0]}, {"hidden_layer_sizes": [(256, 256), (512, 512), (1024, 1024), (2048, 2048), (256, 256, 256, 256), (512, 512, 512, 512)], "alpha": [0.0, 1e-6, 1e-5, 1e-4], "learning_rate": [0.01, 0.05, 0.1], "dropout_rate": [0.0, 0.2, 0.5]}]
+		parameter_ranges_list = [{"n_estimators": [50, 100, 200], "max_depth": [5, 10, 20], "min_samples_leaf": [5, 20, 100], "max_features": [0.2, 0.5, 0.8]}, {"kernel": ["linear", "rbf", "sigmoid"], "C": [0.001, 0.1, 1.0, 10.0], "gamma": [0.001, 0.1, 1.0, 10.0], "epsilon": [0.001, 0.1, 1.0]}, {"hidden_layer_sizes": [(256, 256), (512, 512), (1024, 1024), (2048, 2048), (256, 256, 256, 256), (512, 512, 512, 512)], "alpha": [0.0, 1e-6, 1e-5, 1e-4], "learning_rate": [0.01, 0.05, 0.1], "dropout_rate": [None, 0.2, 0.5]}]
 	model_names = ["RF", "SVM", "DNN"]
 	best_score = 0 if classification else -float("inf")
 	best_parameters = None
