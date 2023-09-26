@@ -3,6 +3,7 @@ import rdkit
 from rdkit import Chem
 from rdkit import AllChem
 from rdkit.Chem import Descriptors, rdFreeSASA
+from rdkit.Chem.rdMolDescriptors import CalcMQNs, CalcAUTOCORR2D, BCUT2D
 from rdkit.Chem.rdMolDescriptors import CalcAUTOCORR3D, CalcRDF, CalcMORSE, CalcWHIM, CalcGETAWAY
 from rdkit.Chem.Descriptors3D import *
 
@@ -20,12 +21,13 @@ def get_mol_list(smiles_strings):
 			print("ERROR: %s - SanitizeMol failed. Flag: %s" % (smiles, str(rdkit.Chem.rdmolops.SanitizeFlags.values[sanitize_result])))
 	return mols
 
-def get_descriptors(mols, sasa=True):
+def get_descriptors(mols):
+	functions = [rdFreeSASA.CalcSASA, CalcMQNs, CalcAUTOCORR2D, BCUT2D]
 	descriptors = [Descriptors.CalcMolDescriptors(mol) for mol in mols]
 	descriptor_array = np.array([[mol_descrs[descr] for descr in mol_descrs] for mol_descrs in descriptors])
-	if sasa:
-		freesasas = np.array([rdFreeSASA.CalcSASA(mol) for mol in mols])
-		descriptor_array = np.hstack((descriptor_array, freesasas.reshape(freesasas.shape[0], 1)))
+	for function in functions:
+		additional_descrs = np.array([function(mol) for mol in mols])
+		descriptor_array = np.hstack((descriptor_array, additional_descrs.reshape(additional_descrs.shape[0], 1)))
 	descr_names = [name for name in descriptors[0].keys()]
 	to_keep = ~np.all(descriptor_array == descriptor_array[0,:], axis=0)
 	ipc_index = descr_names.index("Ipc")
