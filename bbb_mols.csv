@@ -51,8 +51,8 @@ BMS-Ibersartan-analog-2,CN1CN(c2ccccc2)C2(CCN(CCCC(=O)c3csc(I)c3)CC2)C1=O,72.10,
 Bremazocine,CCC12CCN(CC3(O)CC3)C(Cc3ccc(O)cc13)C2(C)C,43.7,2.78,+
 Bretazenil,CC(C)(C)OC(=O)c1ncn-2c1C1CCCN1C(=O)c1c(Br)cccc-21,64.43,3.18,+
 Bretazenil-derivative-1,CC(C)c1nc(no1)-c1ncn-2c1CN(C)C(=O)c1c(Cl)cccc-21,77.05,2.75,-
-Bretazenil-derivative-2,(di-OH),CN1Cc2c(ncn2-c2cccc(Cl)c2C1=O)-c1noc(n1)C(C)(CO)CO,117.51,0.87,-
-Bretazenil-derivative-3,(OH),CN1Cc2c(ncn2-c2cccc(Cl)c2C1=O)-c1noc(n1)C(C)(C)O,97.28,1.75,-
+Bretazenil-derivative-2(di-OH),CN1Cc2c(ncn2-c2cccc(Cl)c2C1=O)-c1noc(n1)C(C)(CO)CO,117.51,0.87,-
+Bretazenil-derivative-3(OH),CN1Cc2c(ncn2-c2cccc(Cl)c2C1=O)-c1noc(n1)C(C)(C)O,97.28,1.75,-
 Bretazenil-derivative-4,CN1Cc2c(ncn2-c2cccc(Cl)c2C1=O)-c1noc(n1)C(C)(O)CO,117.51,0.72,-
 Budipine,CC(C)(C)N1CCC(CC1)(c1ccccc1)c1ccccc1,3.24,4.49,+
 Bupropion,CC(NC(C)(C)C)C(=O)c1cccc(Cl)c1,29.1,3.3,+
