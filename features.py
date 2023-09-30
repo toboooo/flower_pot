@@ -12,7 +12,7 @@ def get_mol_list(smiles_strings):
 	for smiles in smiles_strings:
 		mol = Chem.MolFromSmiles(smiles, sanitize=False)
 		if mol is None:
-			print("ERROR: %s - Invalid smiles string.")
+			print("ERROR: %s - Invalid smiles string." % smiles)
 			continue
 		sanitize_result = Chem.SanitizeMol(mol, catchErrors=True)
 		if sanitize_result == 0:
