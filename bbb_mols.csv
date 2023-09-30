@@ -99,7 +99,7 @@ Ergotamine,CN1CC(CC2C1CC1=C3C(NC=C1)C=CC=C23)C(=O)NC1(C)OC2(O)C3CCCN3C(=O)C(Cc3c
 Ethanol,CCO,20.23,0.00,+
 Ethyl-acetate,CCOC(C)=O,26.3,0.57,+
 Etodolac,CCc1cccc2c3CCOC(CC)(CC(O)=O)c3[nH]c12,62.32,3.27,-
-Ezlopitant,(Pfizer-NK1r-1),COc1ccc(cc1CNC1C2CCN(CC2)C1C(c1ccccc1)c1ccccc1)C(C)C,24.5,5.67,+
+Ezlopitant(Pfizer-NK1r-1),COc1ccc(cc1CNC1C2CCN(CC2)C1C(c1ccccc1)c1ccccc1)C(C)C,24.5,5.67,+
 Fentanyl,CCC(=O)N(C1CCN(CCc2ccccc2)CC1)c1ccccc1,23.55,3.76,+
 Fluconazole,OC(Cn1cncn1)(Cn1cncn1)c1ccc(F)cc1F,81.65,1.47,-
 Fluoromisonidazole,OC(COCF)Cn1ccnc1N(=O)=O,93.10,1.04,-
