@@ -1,10 +1,10 @@
-# Ellipse perimeter approximation: https://www.mathsisfun.com/geometry/ellipse-perimeter.html
+import multiprocessing
 import csv
 import numpy as np
 from rdkit.Chem import Descriptors
 from features import get_mol_list
 
-def get_start_vectors(grid_size=9, x_bounds=(0,175), y_bounds=(-1,8), d_factors=(1,1.5,2,3)):
+def get_start_vectors(grid_size, x_bounds, y_bounds, d_factors):
 	x = np.linspace(x_bounds[0], x_bounds[1], grid_size)
 	x2, x1 = np.meshgrid(x, x)
 	x1, x2 = x1[np.triu_indices_from(x1)].flatten(), x2[np.triu_indices_from(x2)].flatten()
@@ -16,7 +16,6 @@ def get_start_vectors(grid_size=9, x_bounds=(0,175), y_bounds=(-1,8), d_factors=
 	x1, y1, x2, y2 = x1[x_indices], y1[y_indices], x2[x_indices], y2[y_indices]
 	xy = np.column_stack((x1, y1, x2, y2))
 	c = np.linalg.norm(xy[:,(0,1)] - xy[:,(2,3)], axis=1).reshape(xy.shape[0], 1)
-	d = np.array(d_factors)
 	dc = (c * d).flatten()
 	xy_indices = np.repeat(np.arange(xy.shape[0]), d.shape[0])
 	return np.column_stack((xy[xy_indices], dc))
@@ -48,9 +47,6 @@ def normalise_features(features):
 	stddev = np.std(features, axis=0)
 	return features / stddev, stddev
 
-def unnormalise_features(features, stddev):
-	return features * stddev
-
 def ellipse_classify(mol_features, ellipse_vectors):
 	distances = np.linalg.norm(ellipse_vectors[:,np.newaxis,(0,1)] - mol_features[np.newaxis,:,:], axis=2)
 	distances += np.linalg.norm(ellipse_vectors[:,np.newaxis,(2,3)] - mol_features[np.newaxis,:,:], axis=2)
@@ -77,7 +73,7 @@ def optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=0.05, c
 	best_area = calc_area(ellipse_vectors)
 	best_score = best_mcc - area_penalty * best_area
 	for i in range(100000):
-		change = np.random.uniform(-change_size, change_size, size=ellipse_vectors.shape	
+		change = np.random.uniform(-change_size, change_size, size=ellipse_vectors.shape)
 		tentative_vectors = ellipse_vectors + change
 		classifications = ellipse_classify(mol_features, tentative_vectors)
 		mcc = calc_mcc(classifications, labels)
@@ -88,3 +84,39 @@ def optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=0.05, c
 		ellipse_vectors[accept_indices] = tentative_vectors[accept_indices]
 		best_score[accept_indices] = score[accept_indices]
 	return ellipse_vectors
+
+def run_egg_optimisation(mol_features, ellipse_vectors, labels, stddev, seed, type, area_penalty=0.05, change_size=0.5, random_mult=0.025):
+	np.random.seed(seed)
+	ellipse_vectors = optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=area_penalty, change_size=change_size, random_mult=random_mult)
+	classifications = ellipse_classify(mol_features, ellispe_vectors)
+	mcc = calc_mcc(classifications, labels)
+	best_vector = ellipse_vectors[np.argmax(mcc)]
+	best_vector[4] /= np.linalg.norm(best_vector[(0,1)] - best_vector[(2,3)])
+	best_vector[(0,2)] *= stddev[0]
+	best_vector[(1,3)] *= stddev[1]
+	print(type, best_vector)
+
+
+if __name__ == "__main__":
+	hia_smiles, hia_labels = read_from_file("hia_mols.csv")
+	bbb_smiles, bbb_labels = read_from_file("bbb_mols.csv")
+	hia_mols = get_mol_list(hia_smiles)
+	bbb_mols = get_mol_list(bbb_smiles)
+	hia_features = get_egg_features(hia_mols)
+	bbb_features = get_egg_features(bbb_mols)
+	hia_features, hia_stddev = normalise_features(hia_features)
+	bbb_features, bbb_stddev = normalise_features(bbb_features)
+	grid_size = 9
+	hia_x_bounds = np.array([0, 175]) / hia_stddev[0]
+	hia_y_bounds = np.array([-1, 8]) / hia_stddev[1]
+	bbb_x_bounds = np.array([0, 120]) / bbb_stddev[0]
+	bbb_y_bounds = np.array([-1, 8]) / bbb_stddev[1]
+	d_factors = np.array([1.0, 1.5, 2.0, 3.0])
+	hia_start_vectors = get_start_vectors(grid_size, hia_x_bounds, hia_y_bounds, d_factors)
+	bbb_start_vectors = get_start_vectors(grid_size, bbb_x_bounds, bbb_y_bounds, d_factors)
+	for i in range(10):
+		p = multiprocessing.Process(target=run_egg_optimisation, args=(hia_features, hia_start_vectors, hia_labels, hia_stddev, i, "HIA"))
+		p.start()
+	for i in range(10):
+		p = multiprocessing.Process(target=run_egg_optimisation, args=(bbb_features, bbb_start_vectors, bbb_labels, bbb_stddev, i, "BBB"))
+		p.start()
