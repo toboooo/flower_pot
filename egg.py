@@ -77,7 +77,7 @@ def optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=0.05, c
 	best_area = calc_area(ellipse_vectors)
 	best_score = best_mcc - area_penalty * best_area
 	for i in range(100000):
-		change = np.random.uniform(-change_size, change_size, size=ellipse_vectors.shape)
+		change = np.random.uniform(-change_size, change_size, size=ellipse_vectors.shape	
 		tentative_vectors = ellipse_vectors + change
 		classifications = ellipse_classify(mol_features, tentative_vectors)
 		mcc = calc_mcc(classifications, labels)
@@ -86,4 +86,5 @@ def optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=0.05, c
 		tentative_randoms = random_mult * np.random.uniform(0.0, 1.0, size=score.shape)
 		accept_indices = (score + tentative_randoms) > best_score
 		ellipse_vectors[accept_indices] = tentative_vectors[accept_indices]
+		best_score[accept_indices] = score[accept_indices]
 	return ellipse_vectors
