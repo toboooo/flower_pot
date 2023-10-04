@@ -89,9 +89,6 @@ def optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=0.05, c
 		if np.max(mcc) > best_mcc:
 			best_mcc = np.max(mcc)
 			best_vector = tentative_vectors[np.argmax(mcc)]
-
-		print("iter: %d, best score = %.7f, best MCC = %.7f, vector: %s" % (i, np.max(best_score), best_mcc, str(best_vector)))
-
 	return best_vector, best_mcc
 
 def run_egg_optimisation(mol_features, ellipse_vectors, labels, stddev, seed, type, area_penalty=0.05, change_size=0.5, random_mult=0.025):
