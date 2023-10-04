@@ -1,9 +1,9 @@
 import numpy as np
 import rdkit
 from rdkit import Chem
-from rdkit import AllChem
+from rdkit.Chem import AllChem
 from rdkit.Chem import Descriptors, rdFreeSASA
-from rdkit.Chem.rdMolDescriptors import CalcMQNs, CalcAUTOCORR2D, BCUT2D
+from rdkit.Chem.rdMolDescriptors import CalcAUTOCORR2D, BCUT2D
 from rdkit.Chem.rdMolDescriptors import CalcAUTOCORR3D, CalcRDF, CalcMORSE, CalcWHIM, CalcGETAWAY
 from rdkit.Chem.Descriptors3D import *
 
@@ -22,7 +22,7 @@ def get_mol_list(smiles_strings):
 	return mols
 
 def get_descriptors(mols):
-	functions = [rdFreeSASA.CalcSASA, CalcMQNs, CalcAUTOCORR2D, BCUT2D]
+	functions = [rdFreeSASA.CalcSASA, CalcAUTOCORR2D, BCUT2D]
 	descriptors = [Descriptors.CalcMolDescriptors(mol) for mol in mols]
 	descriptor_array = np.array([[mol_descrs[descr] for descr in mol_descrs] for mol_descrs in descriptors])
 	for function in functions:

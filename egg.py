@@ -16,8 +16,8 @@ def get_start_vectors(grid_size, x_bounds, y_bounds, d_factors):
 	x1, y1, x2, y2 = x1[x_indices], y1[y_indices], x2[x_indices], y2[y_indices]
 	xy = np.column_stack((x1, y1, x2, y2))
 	c = np.linalg.norm(xy[:,(0,1)] - xy[:,(2,3)], axis=1).reshape(xy.shape[0], 1)
-	dc = (c * d).flatten()
-	xy_indices = np.repeat(np.arange(xy.shape[0]), d.shape[0])
+	dc = (c * d_factors).flatten()
+	xy_indices = np.repeat(np.arange(xy.shape[0]), d_factors.shape[0])
 	return np.column_stack((xy[xy_indices], dc))
 
 def get_egg_features(mols):
@@ -53,25 +53,28 @@ def ellipse_classify(mol_features, ellipse_vectors):
 	return (distances < ellipse_vectors[:,4].reshape(ellipse_vectors.shape[0], 1)).astype(int)
 
 def calc_mcc(classifications, labels):
-	tp = np.sum((classifications == labels) & (labels == 1), axis=1)
-	tn = np.sum((classifications == labels) & (labels == 0), axis=1)
-	fp = np.sum((classifications != labels) & (classifications == 1), axis=1)
-	fn = np.sum((classifications != labels) & (classifications == 0), axis=1)
+	tp = np.sum(np.logical_and(classifications == 1, labels == 1), axis=1)
+	tn = np.sum(np.logical_and(classifications == 0, labels == 0), axis=1)
+	fp = np.sum(np.logical_and(classifications == 1, labels == 0), axis=1)
+	fn = np.sum(np.logical_and(classifications == 0, labels == 1), axis=1)
 	mcc = np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+	mcc = np.where(mcc == 0.0, 1.0, mcc)
 	mcc = ((tp * tn) - (fp * fn)) / mcc
 	return mcc
 
 def calc_area(ellipse_vectors):
-	c2 = ellipse_vectors[:,0]**2 + ellipse_vectors[:,1]**2
+	c2 = np.sum(np.square(ellipse_vectors[:,(0,1)] - ellipse_vectors[:,(2,3)]), axis=1) / 4
 	a = ellipse_vectors[:,4] / 2
-	b = np.sqrt(a**2 - c2)
+	b = np.sqrt(np.round(a**2 - c2, decimals=14))
 	return np.pi * a * b
 
 def optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=0.05, change_size=0.5, random_mult=0.025):
 	classifications = ellipse_classify(mol_features, ellipse_vectors)
-	best_mcc = calc_mcc(classifications, labels)
-	best_area = calc_area(ellipse_vectors)
-	best_score = best_mcc - area_penalty * best_area
+	mcc = calc_mcc(classifications, labels)
+	area = calc_area(ellipse_vectors)
+	best_score = mcc - area_penalty * area
+	best_mcc = np.max(mcc)
+	best_vector = ellipse_vectors[np.argmax(mcc)]
 	for i in range(100000):
 		change = np.random.uniform(-change_size, change_size, size=ellipse_vectors.shape)
 		tentative_vectors = ellipse_vectors + change
@@ -80,21 +83,25 @@ def optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=0.05, c
 		area = calc_area(tentative_vectors)
 		score = mcc - area_penalty * area
 		tentative_randoms = random_mult * np.random.uniform(0.0, 1.0, size=score.shape)
-		accept_indices = (score + tentative_randoms) > best_score
+		accept_indices = np.logical_and((score + tentative_randoms) > best_score, tentative_vectors[:,4] > 0.0)
 		ellipse_vectors[accept_indices] = tentative_vectors[accept_indices]
 		best_score[accept_indices] = score[accept_indices]
-	return ellipse_vectors
+		if np.max(mcc) > best_mcc:
+			best_mcc = np.max(mcc)
+			best_vector = tentative_vectors[np.argmax(mcc)]
+
+		print("iter: %d, best score = %.7f, best MCC = %.7f, vector: %s" % (i, np.max(best_score), best_mcc, str(best_vector)))
+
+	return best_vector, best_mcc
 
 def run_egg_optimisation(mol_features, ellipse_vectors, labels, stddev, seed, type, area_penalty=0.05, change_size=0.5, random_mult=0.025):
 	np.random.seed(seed)
-	ellipse_vectors = optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=area_penalty, change_size=change_size, random_mult=random_mult)
-	classifications = ellipse_classify(mol_features, ellispe_vectors)
-	mcc = calc_mcc(classifications, labels)
-	best_vector = ellipse_vectors[np.argmax(mcc)]
-	best_vector[4] /= np.linalg.norm(best_vector[(0,1)] - best_vector[(2,3)])
-	best_vector[(0,2)] *= stddev[0]
-	best_vector[(1,3)] *= stddev[1]
-	print(type, best_vector)
+	best_vector, best_mcc = optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=area_penalty, change_size=change_size, random_mult=random_mult)
+	denormed_vector = best_vector.copy()
+	denormed_vector[4] /= np.linalg.norm(denormed_vector[(0,1)] - denormed_vector[(2,3)])
+	denormed_vector[(0,2)] *= stddev[0]
+	denormed_vector[(1,3)] *= stddev[1]
+	print(type, "MCC:", best_mcc, best_vector, denormed_vector)
 
 
 if __name__ == "__main__":
