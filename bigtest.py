@@ -13,17 +13,17 @@ from mlpdropout import MLPDropoutClassifier, MLPDropoutRegressor
 from features import get_mol_list, get_descriptors, get_fingerprints, get_3d_descriptors
 
 # LogD
-def read_lipophilicity(filename):
+def read_data(filename, prop_key):
 	smiles = []
-	logd = []
+	prop = []
 	with open(filename, "r", newline="") as file:
 		csv_reader = csv.DictReader(file, delimiter=",")
 		for line in csv_reader:
 			smiles.append(line["smiles"])
-			logd.append(float(line["exp"]))
-	return smiles, np.array(logd)
+			prop.append(float(line[prop_key]))
+	return smiles, np.array(prop)
 
-smiles, logds = read_lipophilicity("Lipophilicity.csv")
+smiles, logds = read_data("Lipophilicity.csv", "exp")
 mols = get_mol_list(smiles)
 #print("Generating 2D descriptors...")
 #des_2d = get_descriptors(mols)
