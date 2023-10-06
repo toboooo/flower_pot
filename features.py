@@ -2,9 +2,7 @@ import numpy as np
 import rdkit
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from rdkit.Chem import Descriptors, rdFreeSASA
-from rdkit.Chem.rdMolDescriptors import CalcAUTOCORR2D, BCUT2D
-from rdkit.Chem.rdMolDescriptors import CalcAUTOCORR3D, CalcRDF, CalcMORSE, CalcWHIM, CalcGETAWAY
+from rdkit.Chem import Descriptors
 from rdkit.Chem.Descriptors3D import *
 
 def get_mol_list(smiles_strings):
@@ -22,16 +20,13 @@ def get_mol_list(smiles_strings):
 	return mols
 
 def get_descriptors(mols):
-	functions = [rdFreeSASA.CalcSASA, CalcAUTOCORR2D, BCUT2D]
 	descriptors = [Descriptors.CalcMolDescriptors(mol) for mol in mols]
 	descriptor_array = np.array([[mol_descrs[descr] for descr in mol_descrs] for mol_descrs in descriptors])
-	for function in functions:
-		additional_descrs = np.array([function(mol) for mol in mols])
-		descriptor_array = np.hstack((descriptor_array, additional_descrs.reshape(additional_descrs.shape[0], 1)))
 	descr_names = [name for name in descriptors[0].keys()]
 	to_keep = ~np.all(descriptor_array == descriptor_array[0,:], axis=0)
 	ipc_index = descr_names.index("Ipc")
 	to_keep[ipc_index] = False
+	to_keep[np.where(np.isnan(descriptor_array))[1]] = False
 	return descriptor_array[:,to_keep]
 
 def get_fingerprints(mols, radius=2, fp_length=2048):
@@ -45,7 +40,7 @@ def get_fingerprints(mols, radius=2, fp_length=2048):
 
 def get_3d_descriptors(mols, mmff_optimise=False):
 	descriptors = []
-	functions = [Asphericity, Eccentricity, InertialShapeFactor, NPR1, NPR2, PMI1, PMI2, PMI3, RadiusOfGyration, SpherocityIndex, CalcAUTOCORR3D, CalcRDF, CalcMORSE, CalcWHIM, CalcGETAWAY]
+	functions = [Asphericity, Eccentricity, InertialShapeFactor, NPR1, NPR2, PMI1, PMI2, PMI3, RadiusOfGyration, SpherocityIndex]
 	for mol in mols:
 		mol3d = Chem.AddHs(mol)
 		AllChem.EmbedMolecule(mol3d)
@@ -54,4 +49,5 @@ def get_3d_descriptors(mols, mmff_optimise=False):
 		descriptors.append([function(mol3d) for function in functions])
 	descriptor_array = np.array(descriptors)
 	to_keep = ~np.all(descriptor_array == descriptor_array[0,:], axis=0)
+	to_keep[np.where(np.isnan(descriptor_array))[1]] = False
 	return descriptor_array[:,to_keep]
