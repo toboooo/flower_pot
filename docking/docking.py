@@ -9,6 +9,8 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from meeko import MoleculePreparation
 from meeko import PDBQTWriterLegacy
+from meeko import PDBQTMolecule
+from meeko import RDKitMolCreate
 
 def perform_vina_docking(mols, file_names, protein):
 	"""
@@ -40,13 +42,14 @@ def perform_vina_docking(mols, file_names, protein):
 	# Add hydrogens and optimise 3D geometries of the molecules before saving
 	# to PDBQT file.
 	ligand_filenames = list()
-	os.makedirs("ligands", exist_ok=True)
+	os.makedirs("ligand_best_poses", exist_ok=True)
 	for i in range(len(mols)):
 		mols[i] = Chem.AddHs(mols[i])
 		AllChem.EmbedMolecule(mols[i])
 		ff_result = AllChem.MMFFOptimizeMolecule(mols[i])
 		# Try optimising again with more iterations if needed
 		if ff_result == 1:
+			print("WARNING: Force field geometry optimisation did not converge for molecule %s, trying again with more steps..." % Chem.MolToSmiles(mols[i]))
 			AllChem.MMFFOptimizeMolecule(mols[i], maxIters=2000)
 		elif ff_result == -1:
 			print("WARNING: Force field could not be set up for molecule %s. Unable to optimise 3D geometry." % Chem.MolToSmiles(mols[i]))
@@ -55,7 +58,7 @@ def perform_vina_docking(mols, file_names, protein):
 		for setup in mol_setups:
 			pdbqt_string, is_ok, error_msg = PDBQTWriterLegacy.write_string(setup)
 			if is_ok:
-				pdbqt_filename = os.path.join("ligands", file_names[i] + ".pdbqt")
+				pdbqt_filename = os.path.join("ligand_best_poses", file_names[i] + ".pdbqt")
 				pdbqt_file = open(pdbqt_filename, "w")
 				pdbqt_file.write(pdbqt_string)
 				pdbqt_file.close()
@@ -70,7 +73,7 @@ def perform_vina_docking(mols, file_names, protein):
 			docking_scores.append(None)
 			continue
 		output_filename = ligand_filename.replace(".pdbqt", "_out.pdbqt")
-		print("Docking %s..." % ligand_filename)
+		print("Docking %s with %s..." % (ligand_filename, protein))
 		call(("vina", "--receptor", receptor_file, "--ligand", ligand_filename, "--config", config_file, "--out", output_filename))
 		if os.path.exists(output_filename):
 			found_score = False
@@ -84,6 +87,12 @@ def perform_vina_docking(mols, file_names, protein):
 			if not found_score:
 				print("WARNING: Could not find VINA RESULT in output file: %s. Could not get docking score." % output_filename)
 				docking_scores.append(None)
+			else:
+				pdbqt_mol = PDBQTMolecule.from_file(output_filename, skip_typing=True)
+				rdkit_mol = RDKitMolCreate.from_pdbqt_mol(pdbqt_mol)[0]
+				sdf_savename = output_filename.replace("_out.pdbqt", "_%s_vina.sdf" % protein)
+				with Chem.SDWriter(sdf_savename) as writer:
+					writer.write(rdkit_mol)
 			try:
 				os.remove(output_filename)
 			except FileNotFoundError:
@@ -96,11 +105,7 @@ def perform_vina_docking(mols, file_names, protein):
 			os.remove(ligand_filename)
 		except FileNotFoundError:
 			continue
-	try:
-		os.rmdir("ligands")
-		return docking_scores
-	except:
-		return docking_scores
+	return docking_scores
 
 def perform_gold_docking(mols, file_names, protein, gold_dir=""):
 	"""

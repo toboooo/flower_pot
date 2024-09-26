@@ -5,3 +5,4 @@ size_x = 20.0
 size_y = 20.0
 size_z = 20.0
 exhaustiveness = 8
+num_modes = 1
