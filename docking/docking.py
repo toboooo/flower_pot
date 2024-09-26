@@ -49,10 +49,10 @@ def perform_vina_docking(mols, file_names, protein):
 		ff_result = AllChem.MMFFOptimizeMolecule(mols[i])
 		# Try optimising again with more iterations if needed
 		if ff_result == 1:
-			print("WARNING: Force field geometry optimisation did not converge for molecule %s, trying again with more steps..." % Chem.MolToSmiles(mols[i]))
+			print("WARNING: Force field geometry optimisation did not converge for molecule %s, trying again with more steps..." % file_names[i])
 			AllChem.MMFFOptimizeMolecule(mols[i], maxIters=2000)
 		elif ff_result == -1:
-			print("WARNING: Force field could not be set up for molecule %s. Unable to optimise 3D geometry." % Chem.MolToSmiles(mols[i]))
+			print("WARNING: Force field could not be set up for molecule %s. Unable to optimise 3D geometry." % file_names[i])
 		preparator = MoleculePreparation(merge_these_atom_types=[])
 		mol_setups = preparator.prepare(mols[i])
 		for setup in mol_setups:
@@ -64,7 +64,7 @@ def perform_vina_docking(mols, file_names, protein):
 				pdbqt_file.close()
 				ligand_filenames.append(pdbqt_filename)
 			else:
-				print("ERROR: Could not create PDBQT file for molecule %s. Error message: %s." % (Chem.MolToSmiles(mols[i]), error_msg))
+				print("ERROR: Could not create PDBQT file for molecule %s. Error message: %s." % (file_names[i], error_msg))
 				ligand_filenames.append(None)
 	# Perform the docking calculations
 	docking_scores = list()
@@ -177,6 +177,7 @@ def perform_gold_docking(mols, file_names, protein, gold_dir=""):
 	if not os.path.exists(os.path.join("docking", protein, "gold.conf")):
 		print("ERROR: Required docking data file %s not found." % os.path.join("docking", protein, "gold.conf"))
 		return None
+	os.makedirs("ligand_best_poses", exist_ok=True)
 	# Add hydrogens and optimise 3D geometries of the molecules before saving
 	docking_scores = list()
 	for i in range(len(mols)):
@@ -187,13 +188,13 @@ def perform_gold_docking(mols, file_names, protein, gold_dir=""):
 		if ff_result == 1:
 			AllChem.MMFFOptimizeMolecule(mols[i], maxIters=2000)
 		elif ff_result == -1:
-			print("WARNING: Force field could not be set up for molecule %s. Unable to optimise 3D geometry." % Chem.MolToSmiles(mols[i]))
+			print("WARNING: Force field could not be set up for molecule %s. Unable to optimise 3D geometry." % file_names[i])
 		with Chem.SDWriter("ligand.sdf") as sdf_writer:
 			sdf_writer.write(mols[i])
-		print("Docking molecule: %s with target protein: %s" % (Chem.MolToSmiles(mols[i]), protein))
+		print("Docking molecule: %s with target protein: %s" % (file_names[i], protein))
 		call((gold_command, os.path.join("docking", protein, "gold.conf")))
 		if not os.path.exists("bestranking.lst"):
-			print("ERROR: GOLD did not write file 'bestranking.lst' for molecule: %s." % Chem.MolToSmiles(mols[i]))
+			print("ERROR: GOLD did not write file 'bestranking.lst' for molecule: %s." % file_names[i])
 			docking_scores.append(None)
 		else:
 			found_score = False
@@ -205,15 +206,23 @@ def perform_gold_docking(mols, file_names, protein, gold_dir=""):
 					try:
 						docking_scores.append(float(line[0]))
 						found_score = True
+						if len(line) >= 10:
+							output_file = line[9].strip("'")
+						else:
+							print("WARNING: No GOLD output file was found for molecule: %s." % file_names[i])
+							break
+						if os.path.exists(output_file):
+							shutil.move(output_file, "ligand_best_poses/%s" % (file_names[i] + "_" + protein + "_gold.sdf"))
+						else:
+							print("WARNING: No GOLD output file was found for molecule: %s." % file_names[i])
 						break
 					except ValueError:
 						print("WARNING: Invalid docking score found in 'bestranking.lst'.")
 			if not found_score:
-				print("ERROR: GOLD was unable to perform docking for molecule: %s with target protein: %s." % (Chem.MolToSmiles(mols[i]), protein))
+				print("ERROR: GOLD was unable to perform docking for molecule: %s with target protein: %s." % (file_names[i], protein))
 				docking_scores.append(None)
 	try:
 		os.remove("ligand.sdf")
-		os.remove("gold.log")
 		os.remove("bestranking.lst")
 	except FileNotFoundError:
 		pass
