@@ -121,7 +121,7 @@ We also provide implementations of the PAINS [7], Brenk [8] and NIH [9,10] subst
 
 ### Molecular Docking
 
-Docking calculations using either Autodock Vina [11,12] or GOLD [13] may be performed against a set of five target proteins named: "26S_proteasome", "BTHalpha", "CF-IIbeta", "CHK1" and "CYP17a", with their structure files saved under the corresponding directories in the "docking" folder. Before docking, each molecule is embedded in 3D coordinates using RDKit and (if possible) its geometry is optimised using the MMFF94 force field [14] as implemented in RDKit.
+Docking calculations using either Autodock Vina [11,12] or GOLD [13] may be performed against a set of five target proteins named: "26S_proteasome", "BTHalpha", "CF-IIbeta", "CHK1" and "CYP17a", with their structure files saved under the corresponding directories in the "docking" folder. Before docking, each molecule is embedded in 3D coordinates using RDKit and (if possible) its geometry is optimised using the MMFF94 force field [14] as implemented in RDKit. Once the docking score calculation is completed, the best poses found will be saved into a directory named "ligand_best_poses" in the same working directory from which flowerpot.py was run.
 
 For docking with Autodock Vina, the exhaustiveness parameter for the calculations is set to a value of 8 and the size of the box is set to 20.0 Angstrom in the x, y, and z directions. These settings may be found in the "*\_config.txt" files within each of the target protein directories in the "docking" folder.
 
