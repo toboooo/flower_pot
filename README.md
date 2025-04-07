@@ -1,8 +1,10 @@
 # Flower Pot
 
-This program (flowerpot.py) provides an interactive graphical user interface for a small set of models and tools for the calculation of pharmacologically relevant chemical properties. Implemented are estimations of water solubility (LogS), the logarithm of the octanol-water partition coefficient (LogP), lipophilicity at pH 7.4 (LogD) and topological polar surface area (TPSA). This program provides substructure filters checking for potential toxicophores, as well as an adapted version of the BOILED-EGG model by Daina and Zoete [1], which estimates the gastrointestinal absorption of a molecule and its ability to permeate the blood-brain barrier, that we refer to as t**H**e **A**djusted **RD**Kit **BOILED-EGG** (HARDBOILED-EGG). In addition, if the molecular docking programs Autodock Vina or GOLD are installed on the current system, then this program will also allow the user to run molecular docking calculations for a selection of target proteins.
+This program (flowerpot.py) provides an interactive graphical user interface for a small set of models and tools for the calculation of pharmacologically relevant chemical properties. Implemented are estimations of water solubility (LogS), the logarithm of the octanol-water partition coefficient (LogP), lipophilicity at pH 7.4 (LogD) and topological polar surface area (TPSA). This program provides substructure filters checking for potential toxicophores, as well as an adapted version of the BOILED-EGG model by Daina and Zoete [1], which estimates the gastrointestinal absorption of a molecule and its ability to permeate the blood-brain barrier, that we refer to as t**H**e **A**djusted **RD**Kit **BOILED-EGG** (HARDBOILED-EGG). In addition, if the molecular docking programs Autodock Vina or GOLD are installed on the current system, then this program will also allow the user to run molecular docking calculations on their input molecules and will process the main results.
 
 ## Installation
+
+We have written installation scripts for Windows (`windows_install.bat`), macOS (`macos_install.sh`) and Linux (`linux_install.sh`)
 
 First, clone this repository from GitHub:
 
@@ -59,23 +61,21 @@ The input and output files may be .csv files or .xlsx spreadsheets (unfortunatel
 
 A set of check buttons allow the user to select the calculations of which properties will be performed. The selection of the "Print EGG" or any of the "Substructure Filters" options will also create a pop-up window displaying the visualisations of the HARDBOILED-EGG model or any detected toxicophores.
 
-The user may also request that docking calculations are performed for each of the input molecules on a selection of target proteins, using either Autodock Vina or GOLD. These docking scores can also be used in an estimation of each compound's $\\mathrm{IC}\_{50}$ that is suitable for teaching purposes only. In order to use the molecular docking feature, the "docking" directory, and all of the data files therein, must be present in the same working directory as the program. In order to use Autodock Vina for docking calculations, the "vina" executable must be available on the system PATH. The easiest way to achieve this is to locate the Autodock Vina installation folder and add the "bin" directory to the system PATH environment variable. In order to use GOLD, the installation folder must be provided to the program. This can either be achieved by entering the path into the box labelled "GOLD installation path:" at runtime or if one wishes to specify the installation directory persistently, the install path may be written to the first line of a text file called "GOLD_INSTALLDIR.txt" that is saved in the same working directory as the program. If neither of the above options are provided, the program will perform a short search into some pre-determined default guess directories to try to find an installation of GOLD. The above-mentioned GOLD installation directory must be the one in which the "GOLD" (note the upper-case letters) directory can be found. Note this must not be a lower-case "gold" folder or the "GOLD" folder itself, but the folder within which "GOLD" may be found. The docking calculations will not work if any other directory is provided.
+The user may also request that docking calculations are performed for each of the input molecules on a selection of target proteins, using either Autodock Vina or GOLD. These docking scores can also be used in an estimation of each compound's $\\mathrm{IC}\_{50}$ that is suitable for teaching purposes only. In order to use the molecular docking feature, the "docking" directory, and all of the data files therein, must be present in the same working directory as the program. In order to use Autodock Vina for docking calculations, the "vina" executable must be available on the system PATH. The easiest way to achieve this is to locate the Autodock Vina installation folder and add the "bin" directory to the system PATH environment variable. In order to use GOLD, the installation folder must be provided to the program. This can either be achieved by entering the path into the box labelled "GOLD installation path:" at runtime or if one wishes to specify the installation directory persistently, the install path may be written to the first line of a text file called `GOLD_INSTALLDIR.txt` that is saved in the same working directory as the program. If neither of the above options are provided, the program will perform a short search into some pre-determined default guess directories to try to find an installation of GOLD. The above-mentioned GOLD installation directory must be the one in which the "GOLD" (note the upper-case letters) directory can be found. Note this must not be a lower-case "gold" folder or the "GOLD" folder itself, but the folder within which "GOLD" may be found. The docking calculations will not work if any other directory is provided.
 
 Clicking the "Go" button performs the calculations and writes the outputs to the right text box, as well as the specified output spreadsheet, if provided.
 
 ## Dependencies
 
-This code was tested using Python version 3.9.18, and the following libraries (note that small differences in version numbers should not greatly affect the working of the program).
+This code was tested using Python version 3.9.18, and the following libraries. Whilst the program should not be highly sensitive to the specific version numbers, the meeko library that creates and formats Autodock Vina files currently requires the Python version to be at least 3.9, but no higher than 3.11.
 
 * The standard library (os, sys, re, csv, tkinter, math, pathlib, multiprocessing, subprocess, datetime)
 * numpy==1.26.4
 * rdkit==2023.9.5
 * matplotlib==3.8.4
-* pillow==10.3.0
 * openpyxl==3.1.2
 * meeko==0.5.1
 * scipy==1.13.0
-* pandas==2.2.2
 
 ## Methods
 
