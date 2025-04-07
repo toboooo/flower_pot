@@ -9,13 +9,12 @@ fi
 read -p "Do you wish to install to a specific folder? (Press Enter to use the default current directory) " install_folder
 if [[ -z $install_folder ]]; then
 	install_folder=$(pwd)
+elif [ "$install_folder" == "." ]; then
+	install_folder=$(pwd)
+elif [ "$install_folder" == ".."]; then
+	install_folder=$(dirname $(pwd))
 else
-	if [ "$install_folder" == "." ]; then
-		install_folder=$(pwd)
-	elif [ "$install_folder" == ".."]; then
-		install_folder=$(dirname $(pwd))
-	else
-		install_folder=$(cd $(dirname $install_folder); pwd)/$(basename $install_folder)
+	install_folder=$(cd $(dirname $install_folder); pwd)/$(basename $install_folder)
 fi
 mkdir -p $install_folder/flower_pot
 echo "Cloning git repository..."
@@ -34,4 +33,4 @@ source flwpt/bin/activate
 cd flower_pot
 python3 flowerpot.py
 !
-chmod +x $HOME/Desktop/flower_pot.sh
+chmod +x $HOME/Desktop/flowerpot.sh
