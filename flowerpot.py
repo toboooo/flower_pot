@@ -144,7 +144,9 @@ def calc_properties():
 
 	Then, the function will perform all calculations that were requested by the
 	user using the check boxes. First LogD, LogP, LogS and TPSA will be
-	calculated for all of the input molecules that had valid SMILES strings.
+	calculated for all of the input molecules that had valid SMILES strings. The
+	user requested model type (Crippen linear model or neural network) will be
+	used to calculate LogD and LogS.
 
 	Next, the estimation of intestinal absorption and blood-brain barrier
 	permeation using the HARDBOILED-EGG model will be performed, the
@@ -157,7 +159,9 @@ def calc_properties():
 	GOLD, if the executable binaries can be located. The docking scores may also
 	be used in the pedagogical calculations of the IC50 value of a molecule,
 	based on the difference between it's binding affinity and that of a
-	reference structure.
+	reference structure. The user also has the option to provide customised
+	Vina and GOLD job files, which will be run after the jobs specifying an
+	in-built protein target.
 
 	The function will write all of the results to the output text box on the
 	right hand side of the GUI. Unless it is requested by using a check button
@@ -171,6 +175,11 @@ def calc_properties():
 	will be added to the provided name and results will be written in the csv
 	format.
 	"""
+	# Delete output text to show the job has started
+	output_text.configure(state="normal")
+	output_text.delete("1.0", "end")
+	output_text.update_idletasks()
+
 	smiles_strings = []
 	names = []
 	# Get input from textbox
@@ -458,8 +467,6 @@ def calc_properties():
 			forward_button.grid(row=2, column=1, sticky="ew")
 
 		# Write output text
-		output_text.configure(state="normal")
-		output_text.delete("1.0", tk.END)
 		output_text.insert(tk.END, heading + "\n")
 		write_to_file = True
 		is_excel = False
