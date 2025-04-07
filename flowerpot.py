@@ -398,8 +398,8 @@ def calc_properties():
 						print("ERROR: Could not perform docking score calculations with GOLD.")
 				else:
 					print("WARNING: gold.conf file '%s' was not found. Cannot perform custom GOLD docking." % conf_filename.get())
+			# Custom Vina docking
 			if select_custom_vina.get():
-				# Custom Vina docking
 				if os.path.exists(pdbqt_filename.get()) and os.path.exists(config_filename.get()):
 					custom_vina_scores = custom_vina_docking(mols, file_names, pdbqt_filename.get(), config_filename.get())
 					if custom_vina_scores is not None:
