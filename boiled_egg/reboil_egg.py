@@ -1,12 +1,10 @@
 """Performs Monte Carlo optimisation of the HARDBOILED-EGG model starting with
 the ellipse parameters from the original BOILED-EGG publication
 (doi.org/10.1002/cmdc.201600182) using the TPSA and LogP values from RDKit."""
-import sys
 import csv
 import numpy as np
 from rdkit.Chem import Descriptors
-sys.path.append("..")
-from mol_list import get_mol_list
+from utils.mol_list import get_mol_list
 
 def get_start_vectors(major_length, minor_length, angle, centre):
 	"""

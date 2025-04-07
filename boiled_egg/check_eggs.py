@@ -1,10 +1,13 @@
 """A simple script that plots the optimised HARDBOILED-EGG ellipses with the HIA
 and BBB data sets superimposed on top of them."""
+import sys
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
-from reboil_egg import read_from_file, get_mol_list, get_egg_features
+sys.path.append("..")
+from utils.mol_list import get_mol_list
+from reboil_egg import read_from_file, get_egg_features
 
 hia_smiles, hia_labels = read_from_file("hia_mols.csv")
 bbb_smiles, bbb_labels = read_from_file("bbb_mols.csv")

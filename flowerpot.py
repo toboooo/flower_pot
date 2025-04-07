@@ -1,50 +1,49 @@
 """The main script that implements the tkinter GUI and handles the calculations
 of the physical properties the user is interested in."""
 import os
-import sys
 import re
 import csv
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askdirectory
+import numpy as np
 from PIL import Image, ImageTk
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 from openpyxl import load_workbook, Workbook
-from mol_list import get_mol_list
+from utils.mol_list import get_mol_list
 from boiled_egg.print_egg import print_eggs
 from substructure.filters import check_filters
 from log_models.fragment_model import FragmentLogModel
-from docking.docking import perform_vina_docking, perform_gold_docking, estimate_ic50
+from log_models.log_ml_model import MLPWrapper
+from docking.docking import perform_vina_docking, perform_gold_docking, estimate_ic50, custom_gold_docking, custom_vina_docking
 
 FRAME_X_PADDING = 1
 FRAME_Y_PADDING = 1
 MIN_SIZE_X = 1100
-MIN_SIZE_Y = 450
+MIN_SIZE_Y = 530
 TEXTBOX_WIDTH = 40
 TEXTBOX_HEIGHT = 30
 IMAGE_FRAME_X = 200
 IMAGE_FRAME_Y = 220
 
-def resource_path(relative_path):
-	"""
-	Returns a path to a specified file, with the base path modified to allow
-	pyinstaller to be able to locate the file.
-	Args:
-		relative_path: str, the relative path for the required file.
-	Returns:
-		Path to requested file, modified for pyinstaller if needed.
-	"""
-	try:
-		base_path = sys._MEIPASS
-	except Exception:
-		base_path = os.path.abspath(".")
-	return os.path.join(base_path, relative_path)
+LOGS_MEAN = np.array([59.85272991, 102.0204244])
+LOGS_STD = np.array([57.07686877, 61.51980086])
+LOGD_MEAN = np.array([78.00117738, 158.2493462])
+LOGD_STD = np.array([33.83845809, 47.38073137])
 
-def get_filename():
+def get_filename(filename_var, filename_entry):
 	"""Implements the 'Browse' button to select an input file."""
 	filename = askopenfilename()
-	csv_filename.set(filename)
+	filename_var.set(filename)
+	filename_entry.xview_moveto(1)
+
+def get_directory(directory_var, directory_entry):
+	"""Implements the 'Browse' button to select a directory."""
+	dir_name = askdirectory()
+	directory_var.set(dir_name)
+	directory_entry.xview_moveto(1)
 
 def activate_print_egg_button():
 	"""Ensures that if the 'print egg' option is selected, the permeation
@@ -174,101 +173,109 @@ def calc_properties():
 	"""
 	smiles_strings = []
 	names = []
+	# Get input from textbox
 	if not ignore_textbox_value.get():
 		smiles_input = smiles_text.get("1.0", "end-1c")
 		for smiles in smiles_input.splitlines():
-			smiles_strings.append(smiles)
-			names.append(None)
-	filename = csv_filename.get()
-	if os.path.exists(filename):
-		if filename.endswith(".csv"):
-			file = open(filename, "r")
-			csv_reader = csv.reader(file)
-			first_line = next(csv_reader)
-			smiles_pos = None
-			name_pos = None
-			# Check if the file has headings and find the smiles and name positions
-			lower_first_line = [item.lower() for item in first_line]
-			if "smiles" in lower_first_line:
-				smiles_pos = lower_first_line.index("smiles")
-				if "name" in lower_first_line:
-					name_pos = lower_first_line.index("name")
-				elif "names" in lower_first_line:
-					name_pos = lower_first_line.index("names")
-			# Try looking for a valid smiles string instead
-			else:
-				print("Could not find \"smiles\" column heading, looking for valid SMILES string in first row instead...")
-				for i, item in enumerate(first_line):
-					mol = Chem.MolFromSmiles(item, sanitize=False)
-					if mol is not None:
-						smiles_pos = i
-						smiles_strings.append(item)
-						names.append(None)
-						break
-				if smiles_pos is None:
-					print("ERROR: Failed to find valid SMILES string in first line of file %s." % filename)
-			if smiles_pos is not None:
-				for line in csv_reader:
-					if smiles_pos < len(line):
-						smiles_strings.append(line[smiles_pos])
-					else:
-						print("WARNING: Line was shorter than expected position of SMILES string.")
-						continue
-					if name_pos is not None:
-						if name_pos < len(line):
-							names.append(line[name_pos])
-						else:
-							print("WARNING: Line was shorter than expected position of molecule name.")
+			if smiles != "":
+				smiles_strings.append(smiles)
+				names.append(None)
+	# Read input spreadsheet
+	input_filename = csv_filename.get()
+	if os.path.exists(input_filename):
+		print("Attempting to read input from input file '%s'." % input_filename)
+		try:
+			if input_filename.endswith(".csv"):
+				file = open(input_filename, "r")
+				csv_reader = csv.reader(file)
+				first_line = next(csv_reader)
+				smiles_pos = None
+				name_pos = None
+				# Check if the file has headings and find the smiles and name positions
+				lower_first_line = [item.lower() for item in first_line]
+				if "smiles" in lower_first_line:
+					smiles_pos = lower_first_line.index("smiles")
+					if "name" in lower_first_line:
+						name_pos = lower_first_line.index("name")
+					elif "names" in lower_first_line:
+						name_pos = lower_first_line.index("names")
+				# Try looking for a valid smiles string instead
+				else:
+					print("Could not find 'smiles' column heading, looking for valid SMILES string in first row instead...")
+					for i, item in enumerate(first_line):
+						mol = Chem.MolFromSmiles(item, sanitize=False)
+						if mol is not None and item != "":
+							smiles_pos = i
+							smiles_strings.append(item)
 							names.append(None)
-			file.close()
-		elif filename.endswith(".xlsx"):
-			workbook = load_workbook(filename, read_only=True)
-			worksheet = workbook[workbook.sheetnames[0]]
-			smiles_pos = None
-			name_pos = None
-			rows = list(worksheet.rows)
-			# Get first line of spreadsheet, record all cell values as strings
-			first_line = [str(cell.value) for cell in rows[0]]
-			lower_first_line = [item.lower() for item in first_line]
-			# Check if the file has the smiles and names headings and note
-			# their positions
-			if "smiles" in lower_first_line:
-				smiles_pos = lower_first_line.index("smiles")
-				if "name" in lower_first_line:
-					name_pos = lower_first_line.index("name")
-				elif "names" in lower_first_line:
-					name_pos = lower_first_line.index("names")
-			# Try looking for a valid smiles string in the first line instead
-			else:
-				print("Could not find \"smiles\" column heading, looking for valid SMILES string in first row instead...")
-				for i, item in enumerate(first_row):
-					mol = Chem.MolFromSmiles(item, sanitize=False)
-					if mol is not None:
-						miles_pos = i
-						smiles_strings.append(item)
-						names.append(None)
-						break
-				if smile_pos is None:
-					print("ERROR: Failed to find valid SMILES string in first line of file %s." % filename)
-			if smiles_pos is not None:
-				for row in rows[1:]:
-					if smiles_pos < len(row):
-						smiles_strings.append(row[smiles_pos].value)
-					else:
-						print("WARNING: Line was shorter than expected position of SMILES string.")
-						continue
-					if name_pos is not None:
-						if name_pos < len(row):
-							names.append(row[name_pos].value)
+							break
+					if smiles_pos is None:
+						print("ERROR: Failed to find valid SMILES string in first line of file %s." % input_filename)
+				if smiles_pos is not None:
+					for line in csv_reader:
+						if smiles_pos < len(line):
+							smiles_strings.append(line[smiles_pos])
 						else:
-							print("WARNING: Line was shorter than expected position of molecule name.")
+							print("WARNING: Line was shorter than expected position of SMILES string.")
+							continue
+						if name_pos is not None:
+							if name_pos < len(line):
+								names.append(line[name_pos])
+							else:
+								print("WARNING: Line was shorter than expected position of molecule name.")
+								names.append(None)
+				file.close()
+			elif input_filename.endswith(".xlsx"):
+				workbook = load_workbook(input_filename, read_only=True)
+				worksheet = workbook[workbook.sheetnames[0]]
+				smiles_pos = None
+				name_pos = None
+				rows = list(worksheet.rows)
+				# Get first line of spreadsheet, record all cell values as strings
+				first_line = [str(cell.value) for cell in rows[0]]
+				lower_first_line = [item.lower() for item in first_line]
+				# Check if the file has the smiles and names headings and note
+				# their positions
+				if "smiles" in lower_first_line:
+					smiles_pos = lower_first_line.index("smiles")
+					if "name" in lower_first_line:
+						name_pos = lower_first_line.index("name")
+					elif "names" in lower_first_line:
+						name_pos = lower_first_line.index("names")
+				# Try looking for a valid smiles string in the first line instead
+				else:
+					print("Could not find 'smiles' column heading, looking for valid SMILES string in first row instead...")
+					for i, item in enumerate(first_row):
+						mol = Chem.MolFromSmiles(item, sanitize=False)
+						if mol is not None:
+							smiles_pos = i
+							smiles_strings.append(item)
 							names.append(None)
-			workbook.close()
-		else:
-			print("ERROR: Unsupported input file type, please use either a .csv file or a .xlsx spreadsheet.")
-	elif not os.path.exists(filename) and filename != "":
-		print("ERROR: Input file '%s' not found." % filename)
+							break
+					if smile_pos is None:
+						print("ERROR: Failed to find valid SMILES string in first line of file %s." % input_filename)
+				if smiles_pos is not None:
+					for row in rows[1:]:
+						if smiles_pos < len(row):
+							smiles_strings.append(row[smiles_pos].value)
+						else:
+							print("WARNING: Line was shorter than expected position of SMILES string.")
+							continue
+						if name_pos is not None:
+							if name_pos < len(row):
+								names.append(row[name_pos].value)
+							else:
+								print("WARNING: Line was shorter than expected position of molecule name.")
+								names.append(None)
+				workbook.close()
+			else:
+				print("ERROR: Unsupported input file type, please use either a .csv file or a .xlsx spreadsheet.")
+		except PermissionError:
+			print("ERROR: Input file '%s' could not be read: Permission denied." % input_filename)
+	elif not os.path.exists(input_filename) and input_filename != "":
+		print("ERROR: Input file '%s' not found." % input_filename)
 
+	# Process input smiles strings and associate each molecule with a name
 	mols, errs, names = get_mol_list(smiles_strings, names=names)
 	if len(mols) > 0:
 		# Get list of strings for filenames
@@ -291,29 +298,43 @@ def calc_properties():
 					file_names[j] = other_name
 					n += 1
 
+		# Initialise storage of properties
 		properties = dict()
 		heading = "name,smiles,"
 		key_list = []
 
 		# Numerical properties
-		for prop in sorted(numerical_properties.keys()):
-			if numerical_properties[prop].get():
-				heading += prop + ","
-				key_list.append(prop)
-				properties[prop] = []
-		for prop in sorted(properties.keys()):
-			if prop == "LogD":
-				predictions = logd_model.predict(mols)
-				properties[prop] = list(float(pred) for pred in predictions)
-			elif prop == "LogS":
-				predictions = logs_model.predict(mols)
-				properties[prop] = list(float(pred) for pred in predictions)
-			elif prop == "LogP":
-				for mol in mols:
-					properties[prop].append(Descriptors.MolLogP(mol))
-			elif prop == "tPSA":
-				for mol in mols:
-					properties[prop].append(Descriptors.TPSA(mol))
+		if any(wanted.get() for prop, wanted in numerical_properties.items()):
+			if log_predictor_value.get() == 0:
+				logs_model = FragmentLogModel("log_models/Crippen.txt")
+				logs_model.load_coef_file("log_models/sol_coefs.npy")
+				logd_model = FragmentLogModel("log_models/Crippen.txt")
+				logd_model.load_coef_file("log_models/lipo_coefs.npy")
+			elif log_predictor_value.get() == 1:
+				logs_weights = np.load("log_models/logs_network_weights.npz")
+				logs_biases = np.load("log_models/logs_network_biases.npz")
+				logd_weights = np.load("log_models/logd_network_weights.npz")
+				logd_biases = np.load("log_models/logd_network_biases.npz")
+				logs_model = MLPWrapper(logs_weights, logs_biases, LOGS_MEAN, LOGS_STD, activation="relu")
+				logd_model = MLPWrapper(logd_weights, logd_biases, LOGD_MEAN, LOGD_STD, activation="relu")
+			for prop in sorted(numerical_properties.keys()):
+				if numerical_properties[prop].get():
+					heading += prop + ","
+					key_list.append(prop)
+					properties[prop] = []
+			for prop in sorted(properties.keys()):
+				if prop == "LogD":
+					predictions = logd_model.predict(mols)
+					properties[prop] = list(float(pred) for pred in predictions)
+				elif prop == "LogS":
+					predictions = logs_model.predict(mols)
+					properties[prop] = list(float(pred) for pred in predictions)
+				elif prop == "LogP":
+					for mol in mols:
+						properties[prop].append(Descriptors.MolLogP(mol))
+				elif prop == "tPSA":
+					for mol in mols:
+						properties[prop].append(Descriptors.TPSA(mol))
 
 		# HARDBOILED-EGG
 		if egg_value.get():
@@ -338,23 +359,51 @@ def calc_properties():
 
 		# Docking score and IC50 estimation
 		if docking_value.get():
+			# Dock with in-built proteins first
 			for protein in sorted(protein_selection.keys()):
 				if protein_selection[protein].get():
 					if program_value.get() == 0:
-						docking_scores = perform_vina_docking(mols, file_names, protein)
-					elif program_value.get() == 1:
 						docking_scores = perform_gold_docking(mols, file_names, protein, gold_install_path.get())
+					elif program_value.get() == 1:
+						docking_scores = perform_vina_docking(mols, file_names, protein)
 					if docking_scores is not None:
 						heading += protein + " docking score,"
 						key_list.append(protein + "_docking_score")
 						properties[protein + "_docking_score"] = docking_scores
 						if ic50_value.get():
-							estimated_ic50s = estimate_ic50(docking_scores, protein, "vina" if program_value.get() == 0 else "gold")
+							estimated_ic50s = estimate_ic50(docking_scores, protein, "gold" if program_value.get() == 0 else "vina")
 							heading += protein + " IC50,"
 							key_list.append(protein + "_ic50")
 							properties[protein + "_ic50"] = estimated_ic50s
 					else:
-						print("ERROR: Could not perform docking score calculations")
+						print("ERROR: Could not perform docking score calculations for protein: %s." % protein)
+			# Custom GOLD docking
+			if select_custom_gold.get():
+				if os.path.exists(conf_filename.get()):
+					custom_gold_scores = custom_gold_docking(mols, file_names, conf_filename.get(), gold_install_path.get())
+					if custom_gold_scores is not None:
+						heading += "Custom GOLD score,"
+						key_list.append("gold_docking_score")
+						properties["gold_docking_score"] = custom_gold_scores
+					else:
+						print("ERROR: Could not perform docking score calculations with GOLD.")
+				else:
+					print("WARNING: gold.conf file '%s' was not found. Cannot perform custom GOLD docking." % conf_filename.get())
+			if select_custom_vina.get():
+				# Custom Vina docking
+				if os.path.exists(pdbqt_filename.get()) and os.path.exists(config_filename.get()):
+					custom_vina_scores = custom_vina_docking(mols, file_names, pdbqt_filename.get(), config_filename.get())
+					if custom_vina_scores is not None:
+						heading += "Custom Vina score,"
+						key_list.append("vina_docking_score")
+						properties["vina_docking_score"] = custom_vina_scores
+					else:
+						print("ERROR: Could not perform docking score calculations with Autodock Vina.")
+				else:
+					if not os.path.exists(pdbqt_filename.get()):
+						print("WARNING: PBDQT file '%s' was not found. Cannot perform custom Vina docking." % pdbqt_filename.get())
+					if not os.path.exists(config_filename.get()):
+						print("WARNING: Vina config file '%s' was not found. Cannot perform custom Vina docking." % config_filename.get())
 
 		# Pop-up image window
 		if print_egg_value.get() or any(filter_values[filt].get() for filt in filter_values.keys()):
@@ -412,26 +461,33 @@ def calc_properties():
 		output_text.configure(state="normal")
 		output_text.delete("1.0", tk.END)
 		output_text.insert(tk.END, heading + "\n")
-		write_to_file = False
+		write_to_file = True
 		is_excel = False
+		out_foldername = output_foldername.get()
 		out_filename = output_filename.get()
-		if out_filename != "":
-			try:
-				if out_filename.endswith(".xlsx"):
-					is_excel = True
-				elif not out_filename.endswith(".csv"):
-					print("Output file name does not end with either \".xlsx\" or \".csv\", defaulting to a .csv file.")
-					out_filename += ".csv"
-				if is_excel:
-					output_workbook = Workbook(write_only=True)
-					# output_file is actually a spreadsheet sheet if writing
-					# to a excel file
-					output_file = output_workbook.create_sheet("Sheet1")
-				else:
-					output_file = open(out_filename, "w")
-				write_to_file = True
-			except FileNotFoundError:
-				print("Could not open file %s for output. Perhaps check the directory path is spelt correctly.\nContinuing without writing to file..." % output_filename.get())
+		try:
+			if out_filename.endswith(".xlsx"):
+				is_excel = True
+			elif out_filename == "":
+				out_filename = "output.csv"
+				print("Writing data to output.csv...")
+			elif not out_filename.endswith(".csv"):
+				out_filename += ".csv"
+				print("Output file name does not end with either '.xlsx' or '.csv', defaulting to a CSV file '%s'." % out_filename)
+			out_filename = os.path.join(out_foldername, out_filename)
+			if is_excel:
+				output_workbook = Workbook(write_only=True)
+				# output_file is actually a spreadsheet sheet if writing
+				# to an excel file
+				output_file = output_workbook.create_sheet("Sheet1")
+			else:
+				output_file = open(out_filename, "w")
+		except FileNotFoundError:
+			print("ERROR: Could not open file %s for output. Perhaps check the directory path is spelt correctly.\nContinuing without writing to file..." % out_filename)
+			write_to_file = False
+		except PermissionError:
+			print("ERROR: File '%s' could not be opened for writing output: Permission denied.\nContinuing without writing to file..." % out_filename)
+			write_to_file = False
 		if write_to_file:
 			if is_excel:
 				output_file.append(heading.rstrip(",").split(","))
@@ -465,9 +521,16 @@ def calc_properties():
 						output_file.write(err + "\n")
 		if write_to_file:
 			if is_excel:
-				output_workbook.save(out_filename)
+				try:
+					output_workbook.save(out_filename)
+				except FileNotFoundError:
+					print("ERROR: File '%s' could not be saved: File not found." % out_filename)
+				except PermissionError:
+					print("ERROR: Input file '%s' could not be read: Permission denied." % input_filename)
+				print("Writing output to file '%s'." % out_filename)
 				output_workbook.close()
 			else:
+				print("Writing output to file '%s'." % out_filename)
 				output_file.close()
 		output_text.configure(state="disabled")
 
@@ -476,15 +539,11 @@ def calc_properties():
 
 
 if __name__ == "__main__":
-	logs_model = FragmentLogModel(resource_path("log_models/Crippen.txt"))
-	logs_model.load_coef_file(resource_path("log_models/sol_coefs.npy"))
-	logd_model = FragmentLogModel(resource_path("log_models/Crippen.txt"))
-	logd_model.load_coef_file(resource_path("log_models/lipo_coefs.npy"))
-
 	window = tk.Tk()
 	window.title("Flower Pot")
 	window.minsize(MIN_SIZE_X, MIN_SIZE_Y)
 
+	# SMILES input textbox on left of GUI
 	smiles_frame = tk.Frame()
 	smiles_frame.grid(row=0, column=0, sticky="nsew", padx=FRAME_X_PADDING, pady=FRAME_Y_PADDING)
 	smiles_label = ttk.Label(smiles_frame, text="SMILES Input:")
@@ -494,14 +553,16 @@ if __name__ == "__main__":
 	smiles_frame.grid_columnconfigure(0, weight=1)
 	smiles_frame.grid_rowconfigure(1, weight=1)
 
+	# Configuration options in middle of GUI
 	option_frame = tk.Frame()
 	option_frame.grid(row=0, column=1, sticky="nw", padx=FRAME_X_PADDING, pady=FRAME_Y_PADDING)
+	# Input and output file options
 	input_label = ttk.Label(option_frame, text="Input File Path:")
 	input_label.grid(row=0, column=0, sticky="nw")
 	csv_filename = tk.StringVar()
-	csv_entry = ttk.Entry(option_frame, textvariable=csv_filename)
+	csv_entry = ttk.Entry(option_frame, textvariable=csv_filename, state="disabled")
 	csv_entry.grid(row=1, column=0, sticky="nw")
-	browse_button = ttk.Button(option_frame, text="Browse", command=get_filename)
+	browse_button = ttk.Button(option_frame, text="Browse", command=lambda: get_filename(csv_filename, csv_entry))
 	browse_button.grid(row=1, column=1, sticky="nw")
 	ignore_textbox_value = tk.BooleanVar()
 	ignore_textbox_button = ttk.Checkbutton(option_frame, variable=ignore_textbox_value, text="Only use input from file")
@@ -509,66 +570,119 @@ if __name__ == "__main__":
 	quiet_errors_value = tk.BooleanVar()
 	quiet_errors_button = ttk.Checkbutton(option_frame, variable=quiet_errors_value, text="Quieten invalid SMILES errors")
 	quiet_errors_button.grid(row=3, column=0, sticky="nw")
-	output_file_label = ttk.Label(option_frame, text="Output File Path:")
-	output_file_label.grid(row=4, column=0, sticky="nw")
+	output_folder_label = ttk.Label(option_frame, text="Output Folder:")
+	output_folder_label.grid(row=4, column=0, sticky="nw")
+	output_file_label = ttk.Label(option_frame, text="Output File Name:")
+	output_file_label.grid(row=4, column=2, sticky="nw")
+	output_foldername = tk.StringVar()
+	output_folder_entry = ttk.Entry(option_frame, textvariable=output_foldername, state="disabled")
+	output_folder_entry.grid(row=5, column=0, sticky="nw")
+	output_browse_button = ttk.Button(option_frame, text="Select Folder", command=lambda: get_directory(output_foldername, output_folder_entry))
+	output_browse_button.grid(row=5, column=1, sticky="nw")
 	output_filename = tk.StringVar()
 	output_entry = ttk.Entry(option_frame, textvariable=output_filename)
-	output_entry.grid(row=5, column=0, sticky="nw")
-	spacer = tk.Label(option_frame, text="")
-	spacer.grid(row=6, column=0, sticky="nw")
+	output_entry.grid(row=5, column=2, sticky="nw")
+
+	# Numerical properties section
 	property_label = ttk.Label(option_frame, text="Numerical Properties:")
-	property_label.grid(row=7, column=0, sticky="nw")
+	property_label.grid(row=6, column=0, sticky="nw")
 	numerical_properties = {"LogP": tk.BooleanVar(), "LogD": tk.BooleanVar(), "LogS": tk.BooleanVar(), "tPSA": tk.BooleanVar()}
-	for i, num_prop in enumerate(sorted(list(numerical_properties.keys()))):
+	for i, num_prop in enumerate(("LogD", "LogS", "LogP", "tPSA")):
 		checkbox = ttk.Checkbutton(option_frame, variable=numerical_properties[num_prop], text=num_prop)
-		checkbox.grid(row=8, column=i, sticky="w")
+		checkbox.grid(row=7, column=i, sticky="w")
+	log_predictor_label = ttk.Label(option_frame, text="LogD/LogS Predictor:")
+	log_predictor_label.grid(row=8, column=0, sticky="nw")
+	log_predictor_value = tk.IntVar()
+	crippen_button = ttk.Checkbutton(option_frame, variable=log_predictor_value,onvalue=0, offvalue=0, text="Crippen Linear Model")
+	ml_button = ttk.Checkbutton(option_frame, variable=log_predictor_value, onvalue=1, offvalue=1, text="Machine Learning")
+	crippen_button.grid(row=9, column=0, sticky="nw")
+	ml_button.grid(row=9, column=1, sticky="nw")
+
+	# HARDBOILED-EGG section
 	egg_label = ttk.Label(option_frame, text="HARDBOILED-EGG:")
-	egg_label.grid(row=9, column=0, sticky="w")
+	egg_label.grid(row=10, column=0, sticky="w")
 	egg_value = tk.BooleanVar()
 	print_egg_value = tk.BooleanVar()
 	egg_button = ttk.Checkbutton(option_frame, variable=egg_value, text="Permeation", command=activate_egg_button)
-	egg_button.grid(row=10, column=0, sticky="w")
+	egg_button.grid(row=11, column=0, sticky="w")
 	print_egg_button = ttk.Checkbutton(option_frame, variable=print_egg_value, text="Print EGG", command=activate_print_egg_button)
-	print_egg_button.grid(row=10, column=1, sticky="w")
+	print_egg_button.grid(row=11, column=1, sticky="w")
 	print_egg_warning = tk.Label(option_frame, text="\n")
-	print_egg_warning.grid(row=11, column=0, columnspan=3, sticky="nsew")
+	print_egg_warning.grid(row=12, column=0, columnspan=3, sticky="nsew")
+
+	# Substructure filters section
 	filter_label = ttk.Label(option_frame, text="Substructure Filters:")
-	filter_label.grid(row=12, column=0, sticky="w")
+	filter_label.grid(row=13, column=0, sticky="w")
 	filter_values = {"PAINS_A": tk.BooleanVar(), "PAINS_B": tk.BooleanVar(), "PAINS_C": tk.BooleanVar(), "BRENK": tk.BooleanVar(), "NIH": tk.BooleanVar()}
 	for i, filt in enumerate(sorted(list(filter_values.keys()))):
 		checkbox = ttk.Checkbutton(option_frame, variable=filter_values[filt], text=filt)
-		checkbox.grid(row=13, column=i, sticky="w")
+		checkbox.grid(row=14, column=i, sticky="w")
+
+	# Docking section
 	docking_label = ttk.Label(option_frame, text="Molecular Docking:")
-	docking_label.grid(row=14, column=0, sticky="w")
+	docking_label.grid(row=15, column=0, sticky="w")
 	docking_value = tk.BooleanVar()
 	docking_button = ttk.Checkbutton(option_frame, variable=docking_value, text="Calculate Docking Score", command=activate_docking_button)
-	docking_button.grid(row=15, column=0, sticky="w")
+	docking_button.grid(row=16, column=0, sticky="w")
 	ic50_value = tk.BooleanVar()
 	ic50_button = ttk.Checkbutton(option_frame, variable=ic50_value, text="Estimate IC50", command=activate_ic50_button)
-	ic50_button.grid(row=15, column=1, sticky="w")
+	ic50_button.grid(row=16, column=1, sticky="w")
 	docking_warning = tk.Label(option_frame, text="\n")
-	docking_warning.grid(row=16, column=0, columnspan=3, sticky="nsew")
+	docking_warning.grid(row=17, column=0, columnspan=3, sticky="nsew")
 	program_label = ttk.Label(option_frame, text="Docking Program:")
-	program_label.grid(row=17, column=0, sticky="w")
+	program_label.grid(row=18, column=0, sticky="w")
 	program_value = tk.IntVar()
-	vina_button = ttk.Checkbutton(option_frame, variable=program_value, onvalue=0, text="AutoDock Vina")
-	gold_button = ttk.Checkbutton(option_frame, variable=program_value, onvalue=1, text="GOLD")
-	vina_button.grid(row=18, column=0, sticky="w")
-	gold_button.grid(row=18, column=1, sticky="w")
-	gold_box_label = tk.Label(option_frame, text="GOLD installation path:")
-	gold_box_label.grid(row=19, column=0, sticky="w")
+	gold_button = ttk.Checkbutton(option_frame, variable=program_value, onvalue=0, offvalue=0, text="GOLD")
+	vina_button = ttk.Checkbutton(option_frame, variable=program_value, onvalue=1, offvalue=1, text="AutoDock Vina")
+	gold_button.grid(row=19, column=0, sticky="w")
+	vina_button.grid(row=19, column=1, sticky="w")
+	gold_box_label = tk.Label(option_frame, text="GOLD Installation Folder:")
+	gold_box_label.grid(row=20, column=0, sticky="w")
 	gold_install_path = tk.StringVar()
 	gold_install_box = ttk.Entry(option_frame, textvariable=gold_install_path)
-	gold_install_box.grid(row=19, column=1, sticky="w")
+	gold_install_box.grid(row=20, column=1, sticky="w")
+	gold_install_button = ttk.Button(option_frame, text="Browse", command=lambda: get_directory(gold_install_path, gold_install_box))
+	gold_install_button.grid(row=20, column=2, sticky="w")
 	proteins_label = tk.Label(option_frame, text="Target Proteins:")
-	proteins_label.grid(row=20, column=0, sticky="w")
+	proteins_label.grid(row=21, column=0, sticky="w")
 	protein_selection = {"26S_proteasome": tk.BooleanVar(), "BTHalpha": tk.BooleanVar(), "CF-IIbeta": tk.BooleanVar(), "CHK1": tk.BooleanVar(), "CYP17a": tk.BooleanVar()}
 	for i, protein in enumerate(sorted(list(protein_selection.keys()))):
 		protein_button = ttk.Checkbutton(option_frame, variable=protein_selection[protein], text=protein)
-		protein_button.grid(row=21, column=i, sticky="w")
-	go_button = ttk.Button(option_frame, text="Go", command=calc_properties)
-	go_button.grid(row=22, column=0, sticky="nw")
+		protein_button.grid(row=22, column=i, sticky="w")
 
+	# Custom docking section
+	select_custom_gold = tk.BooleanVar()
+	custom_gold_button = ttk.Checkbutton(option_frame, text="Custom GOLD Docking", variable=select_custom_gold)
+	custom_gold_button.grid(row=23, column=0, sticky="nw")
+	conf_file_label = tk.Label(option_frame, text="gold.conf File:")
+	conf_file_label.grid(row=24, column=0, sticky="nw")
+	conf_filename = tk.StringVar()
+	conf_file_box = ttk.Entry(option_frame, textvariable=conf_filename)
+	conf_file_box.grid(row=24, column=1, sticky="nw")
+	conf_file_button = ttk.Button(option_frame, text="Browse", command=lambda: get_filename(conf_filename, conf_file_box))
+	conf_file_button.grid(row=24, column=2, sticky="nw")
+	select_custom_vina = tk.BooleanVar()
+	custom_vina_button = ttk.Checkbutton(option_frame, text="Custom Vina Docking", variable=select_custom_vina)
+	custom_vina_button.grid(row=25, column=0, sticky="nw")
+	pdbqt_file_label = tk.Label(option_frame, text="Protein PDBQT File:")
+	pdbqt_file_label.grid(row=26, column=0, sticky="nw")
+	pdbqt_filename = tk.StringVar()
+	pdbqt_file_box = ttk.Entry(option_frame, textvariable=pdbqt_filename)
+	pdbqt_file_box.grid(row=26, column=1, sticky="nw")
+	pdbqt_file_button = ttk.Button(option_frame, text="Browse", command=lambda: get_filename(pdbqt_filename, pdbqt_file_box))
+	pdbqt_file_button.grid(row=26, column=2, sticky="nw")
+	config_file_label = tk.Label(option_frame, text="Vina Config File:")
+	config_file_label.grid(row=27, column=0, sticky="nw")
+	config_filename = tk.StringVar()
+	config_file_box = ttk.Entry(option_frame, textvariable=config_filename)
+	config_file_box.grid(row=27, column=1, sticky="nw")
+	config_file_button = ttk.Button(option_frame, text="Browse", command=lambda: get_filename(config_filename, config_file_box))
+	config_file_button.grid(row=27, column=2, sticky="nw")
+
+	go_button = ttk.Button(option_frame, text="Go", command=calc_properties)
+	go_button.grid(row=28, column=0, sticky="nw")
+
+	# Output textbox on right of GUI
 	output_frame = tk.Frame()
 	output_frame.grid(row=0, column=2, sticky="nsew", padx=FRAME_X_PADDING, pady=FRAME_Y_PADDING)
 	output_label = tk.Label(output_frame, text="Calculation Output:")

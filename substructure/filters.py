@@ -1,26 +1,10 @@
 """Provides the functions to implement the substructure filtering routines."""
 import os
-import sys
 import csv
 import pathlib
 from datetime import datetime
 from rdkit import Chem
 from rdkit.Chem import Draw
-
-def resource_path(relative_path):
-	"""
-	Returns a path to a specified file, with the base path modified to allow
-	pyinstaller to be able to locate the file.
-	Args:
-		relative_path: str, the relative path for the required file.
-	Returns:
-		Path to requested file, modified for pyinstaller if needed.
-	"""
-	try:
-		base_path = sys._MEIPASS
-	except Exception:
-		base_path = os.path.abspath(".")
-	return os.path.join(base_path, relative_path)
 
 def get_filters(filter_name):
 	"""
@@ -35,7 +19,7 @@ def get_filters(filter_name):
 	"""
 	smarts_strings = []
 	pattern_names = []
-	file = open(resource_path("substructure/" + filter_name.lower() + ".csv"), "r")
+	file = open("substructure/" + filter_name.lower() + ".csv", "r")
 	csv_reader = csv.DictReader(file)
 	for line in csv_reader:
 		pattern_names.append(line["name"])

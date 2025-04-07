@@ -108,35 +108,54 @@ class FragmentLogModel():
 
 if __name__ == "__main__":
 	import sys
+	import re
 	import csv
 	import matplotlib.pyplot as plt
+	from rdkit.Chem.rdMolDescriptors import CalcNumHeavyAtoms
 	sys.path.append("..")
-	from mol_list import get_mol_list
+	from utils.mol_list import get_mol_list
+
+	METALS = ("Li", "Be", "Na", "Mg", "Al", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "Fr", "Ra", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv")
+
+	def filter_training_data(filename, prop_key):
+		metal_regexes = tuple(re.compile(f"\[{metal}.*\]") for metal in METALS)
+		molecules = []
+		property_values = []
+		with open(filename, "r") as file:
+			reader = csv.DictReader(file)
+			for line in reader:
+				no_metal = True
+				smiles_string = line["smiles"]
+				for metal_regex in metal_regexes:
+					metal_match = metal_regex.search(smiles_string)
+					if metal_match:
+						no_metal = False
+						break
+				if not no_metal:
+					continue
+				mol = Chem.MolFromSmiles(smiles_string)
+				if CalcNumHeavyAtoms(mol) >= 3:
+					molecules.append(mol)
+					property_values.append(float(line[prop_key]))
+		return molecules, property_values
 
 	np.random.seed(5)
-
-	sol_smiles = []
-	solubilities = []
-	with open("solubility.csv", "r") as file:
-		reader = csv.DictReader(file)
-		for line in reader:
-			sol_smiles.append(line["smiles"])
-			solubilities.append(float(line["logs"]))
-	shuffled_indices = np.arange(len(sol_smiles))
+	sol_mols, solubilities = filter_training_data("solubility.csv", "logs")
+	shuffled_indices = np.arange(len(sol_mols))
 	np.random.shuffle(shuffled_indices)
-	shuffled_sol_smiles = []
+	shuffled_sol_mols = []
 	for index in shuffled_indices:
-		shuffled_sol_smiles.append(sol_smiles[index])
-	sol_mols, errors = get_mol_list(shuffled_sol_smiles)
+		shuffled_sol_mols.append(sol_mols[index])
 	logs = np.array(solubilities)
 	logs = logs[shuffled_indices]
 	logs_model = FragmentLogModel("Crippen.txt")
 	train_thresh = int(0.8 * len(sol_mols))
-	mols_train, mols_test = sol_mols[:train_thresh], sol_mols[train_thresh:]
+	mols_train, mols_test = shuffled_sol_mols[:train_thresh], shuffled_sol_mols[train_thresh:]
 	logs_train, logs_test = logs[:train_thresh], logs[train_thresh:]
 	logs_model.fit(mols_train, logs_train)
 	train_predictions = logs_model.predict(mols_train)
 	predictions = logs_model.predict(mols_test)
+	print("Train MAE = %.5f" % np.mean(np.abs(logs_train - train_predictions)))
 	print("Test MAE = %.5f" % np.mean(np.abs(logs_test - predictions)))
 	plt.plot(train_predictions, logs_train, "o", label="Train mols")
 	plt.plot(predictions, logs_test, "o", label="Test mols")
@@ -144,33 +163,28 @@ if __name__ == "__main__":
 	plt.xlabel("Predicted LogS")
 	plt.ylabel("Actual LogS")
 	plt.legend()
-	plt.show()
+	plt.savefig("../results/logs_plot.png")
+	plt.clf()
 	logs_model.fit(sol_mols, logs)
 	with open("sol_coefs.npy", "wb") as file:
 		np.save(file, logs_model.coefs)
 
-	lipo_smiles = []
-	lipophilicities = []
-	with open("lipophilicity.csv", "r") as file:
-		reader = csv.DictReader(file)
-		for line in reader:
-			lipo_smiles.append(line["smiles"])
-			lipophilicities.append(float(line["logd"]))
-	shuffled_indices = np.arange(len(lipo_smiles))
+	lipo_mols, lipophilicities = filter_training_data("lipophilicity.csv", "logd")
+	shuffled_indices = np.arange(len(lipo_mols))
 	np.random.shuffle(shuffled_indices)
-	shuffled_lipo_smiles = []
+	shuffled_lipo_mols = []
 	for index in shuffled_indices:
-		shuffled_lipo_smiles.append(lipo_smiles[index])
-	lipo_mols, errors = get_mol_list(shuffled_lipo_smiles)
+		shuffled_lipo_mols.append(lipo_mols[index])
 	logd = np.array(lipophilicities)
 	logd = logd[shuffled_indices]
 	logd_model = FragmentLogModel("Crippen.txt")
 	train_thresh = int(0.8 * len(lipo_mols))
-	mols_train, mols_test = lipo_mols[:train_thresh], lipo_mols[train_thresh:]
+	mols_train, mols_test = shuffled_lipo_mols[:train_thresh], shuffled_lipo_mols[train_thresh:]
 	logd_train, logd_test = logd[:train_thresh], logd[train_thresh:]
 	logd_model.fit(mols_train, logd_train)
 	train_predictions = logd_model.predict(mols_train)
 	predictions = logd_model.predict(mols_test)
+	print("Train MAE = %.5f" % np.mean(np.abs(logd_train - train_predictions)))
 	print("Test MAE = %.5f" % np.mean(np.abs(logd_test - predictions)))
 	plt.plot(train_predictions, logd_train, "o", label="Train mols")
 	plt.plot(predictions, logd_test, "o", label="Test mols")
@@ -178,7 +192,8 @@ if __name__ == "__main__":
 	plt.xlabel("Predicted LogD")
 	plt.ylabel("Actual LogD")
 	plt.legend()
-	plt.show()
+	plt.savefig("../results/logd_plot.png")
+	plt.clf()
 	logd_model.fit(lipo_mols, logd)
 	with open("lipo_coefs.npy", "wb") as file:
 		np.save(file, logd_model.coefs)
