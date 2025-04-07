@@ -17,15 +17,15 @@ else
 	else
 		install_folder=$(cd $(dirname $install_folder); pwd)/$(basename $install_folder)
 fi
-echo "mkdir -p $install_folder/flower_pot"
+mkdir -p $install_folder/flower_pot
 echo "Cloning git repository..."
-echo "git clone --depth 1 --single-branch https://github.com/toboooo/flower_pot.git $install_folder/flower_pot"
-echo "cd $install_folder"
+git clone --depth 1 --single-branch https://github.com/toboooo/flower_pot.git $install_folder/flower_pot
+cd $install_folder
 echo "Creating python environment..."
-echo "python3 -m venv flwpt"
-echo "source flwpt/bin/activate"
+python3 -m venv flwpt
+source flwpt/bin/activate
 echo "Installing required packages..."
-echo "pip install --no-cache-dir -r flower_pot/requirements.txt"
+pip install --no-cache-dir -r flower_pot/requirements.txt
 echo "Creating executable file in ${HOME}/Desktop folder..."
 cat > $HOME/Desktop/flowerpot.command <<!
 #!/bin/bash

@@ -14,19 +14,19 @@ else (
 	popd
 )
 if not %ERRORLEVEL% equ 0 exit /b
-echo "mkdir %install_folder%\flower_pot
+mkdir %install_folder%\flower_pot
 if not %ERRORLEVEL% equ 0 exit /b
 echo "Cloning git repository..."
-echo "git clone --depth 1 --single-branch https://github.com/toboooo/flower_pot.git %install_folder%\flower_pot"
+git clone --depth 1 --single-branch https://github.com/toboooo/flower_pot.git %install_folder%\flower_pot
 if not %ERRORLEVEL% equ 0 exit /b
-echo "cd %install_folder%"
+cd %install_folder%
 echo "Creating python environment..."
-echo "python -m venv flwpt"
+python -m venv flwpt
 if not %ERRORLEVEL% equ 0 exit /b
-echo "call flwpt\Scripts\activate"
+call flwpt\Scripts\activate
 if not %ERRORLEVEL% equ 0 exit /b
 echo "Installing required packages..."
-echo "pip install --no-cache-dir -r flower_pot\requirements.txt"
+pip install --no-cache-dir -r flower_pot\requirements.txt
 if not %ERRORLEVEL% equ 0 echo "Problem installing Flower Pot's dependencies. Is the Python version 3.9 or higher and 3.11 or lower?" && exit /b
 echo "Creating executable file in Desktop folder (%HOMEDRIVE%%HOMEPATH%\Desktop)..."
 set "desktop_file=%HOMEDRIVE%%HOMEPATH%\Desktop\flowerpot.bat"
