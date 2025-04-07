@@ -2,33 +2,34 @@
 
 This program (flowerpot.py) provides an interactive graphical user interface for a small set of models and tools for the calculation of pharmacologically relevant chemical properties. Implemented are estimations of water solubility (LogS), the logarithm of the octanol-water partition coefficient (LogP), lipophilicity at pH 7.4 (LogD) and topological polar surface area (TPSA). This program provides substructure filters checking for potential toxicophores, as well as an adapted version of the BOILED-EGG model by Daina and Zoete [1], which estimates the gastrointestinal absorption of a molecule and its ability to permeate the blood-brain barrier, that we refer to as t**H**e **A**djusted **RD**Kit **BOILED-EGG** (HARDBOILED-EGG). In addition, if the molecular docking programs Autodock Vina or GOLD are installed on the current system, then this program will also allow the user to run molecular docking calculations on their input molecules and will process the main results.
 
+
 ## Installation
 
-We have written installation scripts for Windows (`windows_install.bat`), macOS (`macos_install.sh`) and Linux (`linux_install.sh`)
+We have written installation scripts for Windows (`windows_install.bat`), macOS (`macos_install.sh`) and Linux (`linux_install.sh`). If everything on your system is prepared (most importantly, Python version >= 3.9, < 3.12 and git should be installed and available on the system PATH), when run from the command line the installer script will try to install Flower Pot and all of its dependencies, and will finish by leaving a convenience shell script in your Desktop folder. However, in the case that this does not go to plan, this program can be installed manually with the following steps:
 
 First, clone this repository from GitHub:
 
 ```
-git clone https://github.com/toboooo/flower_pot.git
+git clone --depth 1 --single-branch https://github.com/toboooo/flower_pot.git
 ```
 
-The next, optional, but recommended step is to create a Python virutal environment:
+The next, optional, but highly recommended step is to create a Python virutal environment:
 
 ```
-python -m venv flowerenv
+python -m venv flwpt
 ```
 
 Then activate the environment. On Windows use:
 
 ```
-.\flowerenv\Scripts\activate
+.\flwpt\Scripts\activate
 
 ```
 
-Or if on Linux/MacOS:
+Or if on Linux/macOS:
 
 ```
-source flowerenv/bin/activate
+source flwpt/bin/activate
 ```
 
 Then install the required libraries:
@@ -45,25 +46,6 @@ cd flower_pot
 
 And the program should be ready to use.
 
-## Usage
-
-In order to start the GUI, simply run the main Python script from the command line:
-
-```
-python flowerpot.py
-```
-
-Once started, the GUI presents the user with two text boxes and a set of options specifying the desired inputs and outputs. The left text box allows the user to enter the SMILES strings of a series of molecules, each on a new line, for which the properties are to be calculated.
-
-The middle area provides an option to provide an spreadsheet file that may be used instead of, or in conjunction with, the SMILES strings input text box. This input spreadsheet may contain column headings in its first row titled "smiles" and "name" or "names" (case-insensitive) to specify the columns containing the SMILES strings of the input molecules and any particular labels these molecules are to be associated with. If the "smiles" heading is not found in the input spreadsheet, the program will search the first row for the first column to contain a valid SMILES string, and will use this column to find the input molecules. The name of an output file to which the results will be written may also be specified in a separate field.
-
-The input and output files may be .csv files or .xlsx spreadsheets (unfortunately older .xls files are not supported). If using an Excel spreadsheet, the program will only look in the first worksheet of the file, and therefore the SMILES strings and optional names associated with the molecules must be on the first worksheet.
-
-A set of check buttons allow the user to select the calculations of which properties will be performed. The selection of the "Print EGG" or any of the "Substructure Filters" options will also create a pop-up window displaying the visualisations of the HARDBOILED-EGG model or any detected toxicophores.
-
-The user may also request that docking calculations are performed for each of the input molecules on a selection of target proteins, using either Autodock Vina or GOLD. These docking scores can also be used in an estimation of each compound's $\\mathrm{IC}\_{50}$ that is suitable for teaching purposes only. In order to use the molecular docking feature, the "docking" directory, and all of the data files therein, must be present in the same working directory as the program. In order to use Autodock Vina for docking calculations, the "vina" executable must be available on the system PATH. The easiest way to achieve this is to locate the Autodock Vina installation folder and add the "bin" directory to the system PATH environment variable. In order to use GOLD, the installation folder must be provided to the program. This can either be achieved by entering the path into the box labelled "GOLD installation path:" at runtime or if one wishes to specify the installation directory persistently, the install path may be written to the first line of a text file called `GOLD_INSTALLDIR.txt` that is saved in the same working directory as the program. If neither of the above options are provided, the program will perform a short search into some pre-determined default guess directories to try to find an installation of GOLD. The above-mentioned GOLD installation directory must be the one in which the "GOLD" (note the upper-case letters) directory can be found. Note this must not be a lower-case "gold" folder or the "GOLD" folder itself, but the folder within which "GOLD" may be found. The docking calculations will not work if any other directory is provided.
-
-Clicking the "Go" button performs the calculations and writes the outputs to the right text box, as well as the specified output spreadsheet, if provided.
 
 ## Dependencies
 
@@ -76,6 +58,32 @@ This code was tested using Python version 3.9.18, and the following libraries. W
 * openpyxl==3.1.2
 * meeko==0.5.1
 * scipy==1.13.0
+
+The scikit-learn library is not required for the use of the machine learning LogS/LogD predictions, but would be needed if one wished to retrain the neural network models.
+
+
+## Usage
+
+In order to start the GUI, change to the `flower_pot` installation directory and simply run the main Python script from the command line:
+
+```
+python flowerpot.py
+```
+
+Once started, the GUI presents the user with two text boxes and a set of options specifying the desired inputs and outputs. The left text box allows the user to enter the SMILES strings of a series of molecules, each on a new line, for which the properties are to be calculated.
+
+The middle area provides an option to provide an spreadsheet file that may be used instead of, or in conjunction with, the SMILES strings input text box. This input spreadsheet may contain column headings in its first row titled "smiles" and "name" or "names" (case-insensitive) to specify the columns containing the SMILES strings of the input molecules and any particular labels these molecules are to be associated with. If the "smiles" heading is not found in the input spreadsheet, the program will search the first row for the first column to contain a valid SMILES string, and will use this column to find the input molecules. The name of an output file to which the results will be written may also be specified in a separate field.
+
+The input and output files may be .csv files or .xlsx spreadsheets (unfortunately older .xls files are not supported). If using an Excel spreadsheet for input, the program will only look in the first worksheet of the file, and therefore the SMILES strings and optional names associated with the molecules must be on the first worksheet.
+
+A set of check buttons allow the user to select the calculations of which properties will be performed. The calculation of LogS and LogD may either be performed with a linear atomic contibution "Crippen" model or a pre-trained neural network. The selection of the "Print EGG" or any of the "Substructure Filters" options will also create a pop-up window displaying the visualisations of the HARDBOILED-EGG model or any detected toxicophores.
+
+The user may also request that docking calculations are performed for each of the input molecules on a selection of target proteins, using either Autodock Vina or GOLD. These docking scores can also be used in an estimation of each compound's $\\mathrm{IC}\_{50}$ that is suitable for teaching purposes only and does not correspond to any realistic prediction. In order to use the molecular docking feature, the "docking" directory, and all of the data files therein, must be present in the same working directory as the program. In order to use Autodock Vina for docking calculations, the "vina" executable must be available on the system PATH. The easiest way to achieve this is to locate the Autodock Vina installation folder and add the "bin" directory to the system PATH environment variable. In order to use GOLD, the installation folder must be provided to the program. This can either be achieved by entering the path into the box labelled "GOLD installation path:" at runtime or if one wishes to specify the installation directory persistently, the install path may be written to the first line of a text file called `GOLD_INSTALLDIR.txt` that is saved in the same working directory as the program. If neither of the above options are provided, the program will perform a short search into a pre-determined default guess directory to try to find an installation of GOLD. The above-mentioned GOLD installation directory must be the one in which the "GOLD" (note the upper-case letters) directory can be found. Note this must not be a lower-case "gold" folder or the "GOLD" folder itself, but the folder within which "GOLD" may be found. The docking calculations will not work if any other directory is provided.
+
+The final area of the input region of the GUI allows the user to provide their own input files for "custom" docking calculations with either Autodock Vina or GOLD. This allows the user to perform docking calculations on protein targets beyond the five that are built-in to Flower Pot. To perform a custom Autodock Vina calculation, the user must provide a PDBQT file of the target protein as well as a config file. For custom GOLD calculations, a gold conf file (by default called "gold.conf" by GOLD) is all that is required. Before running a custom GOLD docking calculation, the "WRITE OPTIONS", "SAVE OPTIONS" and "DATA FILES" fields of the GOLD conf file will be overwritten. **However, for custom docking calculations with both GOLD and Autodock Vina, the user MUST ensure that the files are correct and otherwise suited to their requirements.**
+
+Clicking the "Go" button performs the calculations and writes the outputs to the right text box, as well as the output spreadsheet (which will be named "output.csv" by default).
+
 
 ## Methods
 
@@ -95,29 +103,45 @@ The BOILED-EGG model of Daina and Zoete [1] describes molecules in two variables
 
 **Figure 3.** The full HARDBOILED-EGG model with the HIA and BBB data points superimposed atop the "egg". The BBB classifier is shown as the yellow "yolk" and the HIA classifier is shown as the "white" of the egg.
 
+
 ### Physiochemical Properties
 
-The TPSA and LogP calculations were performed using the RDKit library and the appropriate functions are thus trivally called when required. For the calculation of LogS and LogD, we chose to use the atomic contribution method of Wildman and Crippen [2], that is also used in the RDKit implementation of the prediction of LogP. This model estimates the value of a property as a sum of contributions from each atom in the molecule, given by
+The TPSA and LogP calculations were performed using the RDKit library and the appropriate functions are thus trivally called when required. We have implemented two data-driven options for the calculations of LogS and LogD. The first of these is the atomic contribution method of Wildman and Crippen [2], that is also used in the RDKit implementation of the prediction of LogP. This model estimates the value of a property as a sum of contributions from each atom in the molecule, given by
 
 $$\\mathrm{LogX} = \\sum_i n_i a_i$$
 
-where $i$ indexes each atom type known to the model, $n_i$ corresponds to the number of atoms of type $i$ within the molecule and $a_i$ represents the contribution of atom type $i$ to the total property value of the molecule. We used the same set of atom types as used in the RDKit implementation of Crippen's LogP calculations (the SMARTS strings of these atom types are available from [3]). For LogS, we acquired the AqSolDBc compiled solubility dataset from Llompart *et al.* [4], which consists of 9982 molecules and experimental solubility measurements (this data may be found in our file "log_models/solubility.csv"). For LogD, we utilised the lipophilicity dataset from the MoleculeNet benchmark [5] and supplemented this with the molecules in the dataset by Wang *et al.* [6] that were not already in the MoleculeNet dataset. This gave a total of 5147 molecules with experimental LogD measurements, and this combined dataset may be found in the file "log_models/lipophilicity.csv".
+where $i$ indexes each atom type known to the model, $n_i$ corresponds to the number of atoms of type $i$ within the molecule and $a_i$ represents the contribution of atom type $i$ to the total property value of the molecule. We used the same set of atom types as used in the RDKit implementation of Crippen's LogP calculations (the SMARTS strings of these atom types are available from [3]). For LogS, we acquired the AqSolDBc compiled solubility dataset from Llompart *et al.* [4], which consists of 9982 molecules and experimental solubility measurements (this data may be found in our file `log_models/solubility.csv`). For LogD, we utilised the lipophilicity dataset from the MoleculeNet benchmark [5] and supplemented this with the molecules in the dataset by Wang *et al.* [6] that were not already in the MoleculeNet dataset. This gave a total of 5147 molecules with experimental LogD measurements, and this combined dataset may be found in the file `log_models/lipophilicity.csv`. Before estimation of the atomic contributions, we filtered these data sets, removing all molecules that contained any element other than H, B, C, N, O, F, Si, P, S, Cl, Br or I and any molecule that had fewer than 3 heavy atoms.
 
-With the datasets obtained, we extracted counts of each of the Crippen atom types for all of the molecules in each dataset, randomly split 80% of the molecules in each dataset into a "training" set and added the remaining 20% to a "test" set, and then used the linear least-squares solver from the numpy python library to obtain the $a_i$ atom type contribution coefficients from each training set. The mean absolute error (MAE) for the LogS model on the testing data was found to be 1.09 log units and the MAE for the LogD model on the testing data was found to be 0.80 log units. Scatter plots for the predictions of both models are shown in Figures 4 and 5.
+With the datasets obtained and filtered, we extracted counts of each of the Crippen atom types for all of the molecules in each dataset, randomly split 80% of the molecules in each dataset into a "training" set and added the remaining 20% to a "test" set, and then used the linear least-squares solver from the numpy python library to obtain the $a_i$ atom type contribution coefficients from each training set. The mean absolute error (MAE) of the LogS model for the training data was 0.97813 log units and the MAE for the testing data was 1.01466 log units. The MAE of the LogD model for the training data 0.78180 log units and the MAE for the testing data was 0.78610. Scatter plots for the predictions of both models are shown in Figures 4 and 5.
 
 ![Figure 4](results/logs_plot.png)
 
-**Figure 4.** Scatter plot showing the predicted versus actual LogS values for all molecules in the solubility dataset. Training data points are shown in blue, testing points are shown in orange.
+**Figure 4.** Scatter plot showing the predicted versus actual LogS values for the Crippen LogS model. Training data points are shown in blue, testing points are shown in orange.
 
 ![Figure 5](results/logd_plot.png)
 
-**Figure 5.** Scatter plot showing the predicted versus actual LogD values for all molecules in the Lipophilicity dataset. Training data points are shown in blue, testing points are shown in orange.
+**Figure 5.** Scatter plot showing the predicted versus actual LogD values for the Crippen LogD model. Training data points are shown in blue, testing points are shown in orange.
 
 Following analysis of the model performances, we recombined the training and testing sets and reperformed the least-squares fitting on the entirety of the datasets to obtain the atom contribution coefficents for the final LogS and LogD models.
+
+The second technique we implement to estimate LogS and LogD is a neural network, trained on the same dataset as the Crippen-based linear models with the same filtering and train-test split applied. We featurise each molecule before input to the neural network using a handful of descriptors from the RDKit library combined with a 1024 bit Morgan fingerprint of radius 3. We selected an architecture consisting of two hidden layers with 512 neurons in the first, followed by 265 neurons. The choice between activation functions (tanh vs. ReLU), optimisers (SGD vs. Adam) and $L_2$-regularisation penalties ($10^{-3}$ vs. $10^{-4}$) were determined by a grid search, with the selection based on the smallest MAE score from 5-fold cross validation on the training set. All networks were trained with early stopping for a maximum of 2000 iterations. The MAE of the LogS network for the training set was 0.53308 log units and the MAE for the testing set was 0.75964 log units. The MAE of the LogD network for the training set was 0.10808 log units and the MAE for the testing set was 0.51109 log units. Scatter plots for the predictions of both networks are shown in Figures 6 and 7. As for the Crippen-based models, after performing this testing, these neural networks were retrained on the combined training and testing data sets.
+
+![Figure 6](results/logs_network_plot.png)
+
+**Figure 6.** Scatter plot showing the predicted versus actual LogS values for the LogS neural network. Training data points are shown in blue, testing points are shown in orange.
+
+![Figure 7](results/logd_network_plot.png)
+
+**Figure 7.** Scatter plot showing the predicted versus actual LogD values for the LogD neural network. Training data points are shown in blue, testing points are shown in orange.
+
+With regards to the choice of which model is to be used, we note the following advantages and disadvantages of each technique. The neural networks give noticeably better predictive performance on the training and testing data, however, as machine learning models, they are inherently prone to overfitting to the domain of the data with which they were trained and their performance may suffer dramatically and unexpectedly if they are provided with "unusual" molecules that are somehow different from those in their training sets. In addition, that a particular molecule is unusual and consequently causes poor performance is not likely to be obvious from a human perspective. On the other hand, the atomic contribution based models display significantly less overfitting (note the much closer agreement between their training and testing scores compared with the neural networks), and may therefore be more robust when dealing with unusual structures different to those used to train the neural networks. However as simpler linear models, their predictive performance may not be as strong as the machine learning models that are better able to capture non-linear trends in the structure-activity relationships.
+
+
 
 ### Substructure Filters
 
 We also provide implementations of the PAINS [7], Brenk [8] and NIH [9,10] substructure filters, which are straightforwardly implemented by aquiring the corresponding lists of SMARTS strings for each of the filters from the RDKit library (found in the csv files in the "substructure" folder), and using RDKit again to detect substructure matches from the filters and highlight them to the user.
+
 
 ### Molecular Docking
 
@@ -140,6 +164,7 @@ where $\\Delta d$ is the difference between the current molecule's docking score
 * CYP17a: ```C[C@]12CC[C@H](O)CC1=CC[C@@H]1[C@@H]2CC[C@]2(C)C(c3cccnc3)=CC[C@@H]12```
 
 Note however that boron is not available as a valid atom type in Autodock Vina, therefore the reference value for 26S_proteasome in Autodock Vina was calculated from the SMILES string resulting from the replacement of the boron atom with carbon.
+
 
 ## References
 
