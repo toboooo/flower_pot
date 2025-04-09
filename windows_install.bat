@@ -29,5 +29,5 @@ echo @echo off>%desktop_file%
 if not %ERRORLEVEL% equ 0 exit /b
 echo call %install_folder%\flwpt\Scripts\activate>>%desktop_file%
 echo cd %install_folder%\flower_pot>>%desktop_file%
-echo python3 flowerpot.py>>%desktop_file%
+echo python flowerpot.py>>%desktop_file%
 echo pause>>%desktop_file%
