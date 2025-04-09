@@ -233,6 +233,8 @@ def calc_properties():
 							else:
 								print("WARNING: Line was shorter than expected position of molecule name.")
 								names.append(None)
+						else:
+							names.append(None)
 				file.close()
 			elif input_filename.endswith(".xlsx"):
 				workbook = load_workbook(input_filename, read_only=True)
