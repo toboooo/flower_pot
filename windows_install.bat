@@ -1,6 +1,6 @@
 @echo off
 python3 --version >nul 2>nul
-if not %ERRORLEVEL% equ 0 echo "'python' command not found, Python version >= 3.9 and < 3.12 is required." && exit /b
+if not %ERRORLEVEL% equ 0 echo "'python3' command not found, Python version >= 3.9 and < 3.12 is required." && exit /b
 git --version >nul 2>nul
 if not %ERRORLEVEL% equ 0 echo "'git' command not found, please install git and make it available on %PATH% to install." && exit /b
 set /p "install_folder=Do you wish to install to a specific folder? (Press Enter to use the default current directory) "
