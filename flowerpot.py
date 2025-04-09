@@ -254,14 +254,14 @@ def calc_properties():
 				# Try looking for a valid smiles string in the first line instead
 				else:
 					print("Could not find 'smiles' column heading, looking for valid SMILES string in first row instead...")
-					for i, item in enumerate(first_row):
+					for i, item in enumerate(first_line):
 						mol = Chem.MolFromSmiles(item, sanitize=False)
 						if mol is not None:
 							smiles_pos = i
 							smiles_strings.append(item)
 							names.append(None)
 							break
-					if smile_pos is None:
+					if smiles_pos is None:
 						print("ERROR: Failed to find valid SMILES string in first line of file %s." % input_filename)
 				if smiles_pos is not None:
 					for row in rows[1:]:
@@ -276,6 +276,8 @@ def calc_properties():
 							else:
 								print("WARNING: Line was shorter than expected position of molecule name.")
 								names.append(None)
+						else:
+							names.append(None)
 				workbook.close()
 			else:
 				print("ERROR: Unsupported input file type, please use either a .csv file or a .xlsx spreadsheet.")
