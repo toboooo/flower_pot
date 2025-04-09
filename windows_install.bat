@@ -27,7 +27,7 @@ echo "Creating executable file in Desktop folder (%HOMEDRIVE%%HOMEPATH%\Desktop)
 set "desktop_file=%HOMEDRIVE%%HOMEPATH%\Desktop\flowerpot.bat"
 echo @echo off>%desktop_file%
 if not %ERRORLEVEL% equ 0 exit /b
-echo cd %install_folder%>>%desktop_file%
-echo call flwpt\Scripts\activate>>%desktop_file%
-echo cd flower_pot>>%desktop_file%
+echo call %install_folder%\flwpt\Scripts\activate>>%desktop_file%
+echo cd %install_folder%\flower_pot>>%desktop_file%
 echo python3 flowerpot.py>>%desktop_file%
+echo pause>>%desktop_file%
