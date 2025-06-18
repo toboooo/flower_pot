@@ -3,16 +3,12 @@ from rdkit.Chem.rdMolDescriptors import *
 from rdkit.Chem import rdFingerprintGenerator
 
 class MLPWrapper():
-	def __init__(self, weights, biases, x_mean, x_std, activation="relu"):
+	def __init__(self, weights, biases, x_mean, x_std):
 		self.weights = list(weights[f"arr_{i}"] for i in range(len(weights)))
 		self.biases = list(biases[f"arr_{i}"] for i in range(len(biases)))
 		self.x_mean = x_mean
 		self.x_std = x_std
 		self.n_layers = len(weights)
-		if activation == "relu":
-			self.activation_func = self.relu
-		elif activation == "tanh":
-			self.activation_func = self.tanh
 
 	@staticmethod
 	def fingerprint_molecules(mols):
@@ -27,7 +23,9 @@ class MLPWrapper():
 		values = []
 		for mol in mols:
 			mol_features = []
-			mol_features.append(CalcCrippenDescriptors(mol)[0])
+			crippen_descriptors = CalcCrippenDescriptors(mol)
+			mol_features.append(crippen_descriptors[0])
+			mol_features.append(crippen_descriptors[1])
 			mol_features.append(CalcTPSA(mol))
 			mol_features.append(CalcLabuteASA(mol))
 			mol_features.append(CalcFractionCSP3(mol))
@@ -43,13 +41,10 @@ class MLPWrapper():
 		values = np.array(values)
 		fingerprints = MLPWrapper.fingerprint_molecules(mols)
 		values = np.concatenate((values, fingerprints), axis=1)
-		return values, (1, 2)
+		return values, (1, 2, 3)
 
 	def relu(self, z):
 		return np.maximum(z, 0, out=z)
-
-	def tanh(self, z):
-		return np.tanh(z, out=z)
 
 	def predict(self, mols):
 		if self.x_mean is None or self.x_std is None:
@@ -61,7 +56,7 @@ class MLPWrapper():
 			activation = np.dot(activation, self.weights[i])
 			activation += self.biases[i]
 			if i != self.n_layers - 1:
-				self.activation_func(activation)
+				self.relu(activation)
 		return activation.ravel()
 
 
@@ -70,7 +65,6 @@ if __name__ == "__main__":
 	import csv
 	import matplotlib.pyplot as plt
 	from sklearn.neural_network import MLPRegressor
-	from sklearn.model_selection import GridSearchCV
 	from rdkit import Chem
 
 	METALS = ("Li", "Be", "Na", "Mg", "Al", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "Fr", "Ra", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv")
@@ -92,14 +86,15 @@ if __name__ == "__main__":
 				if not no_metal:
 					continue
 				mol = Chem.MolFromSmiles(smiles_string)
+				if mol is None:
+					continue
 				if CalcNumHeavyAtoms(mol) >= 3:
 					molecules.append(mol)
 					property_values.append(float(line[prop_key]))
 		return molecules, property_values
 
-	hidden_layer_tests = {"activation": ("relu", "tanh"), "solver": ("sgd", "adam"), "alpha": (0.0001, 0.001)}
 	np.random.seed(5)
-	mlp_model = MLPRegressor(hidden_layer_sizes=(512,265), early_stopping=True, max_iter=2000)
+	logs_network = MLPRegressor(hidden_layer_sizes=(512,256), activation="relu", alpha=0.001, solver="sgd", early_stopping=True, max_iter=2000)
 	sol_mols, solubilities = filter_training_data("solubility.csv", "logs")
 	shuffled_indices = np.arange(len(sol_mols))
 	np.random.shuffle(shuffled_indices)
@@ -116,12 +111,9 @@ if __name__ == "__main__":
 	x_train[:,scale_indices] = (x_train[:,scale_indices] - x_mean) / x_std
 	x_test, scale_indices = MLPWrapper.featurize_molecules(mols_test)
 	x_test[:,scale_indices] = (x_test[:,scale_indices] - x_mean) / x_std
-	grid_search = GridSearchCV(mlp_model, hidden_layer_tests, refit=True, cv=5, scoring="neg_mean_absolute_error")
-	grid_search.fit(x_train, logs_train)
-	print("Best params:", grid_search.best_params_)
-	best_model = grid_search.best_estimator_
-	train_preds = best_model.predict(x_train)
-	preds = best_model.predict(x_test)
+	logs_network.fit(x_train, logs_train)
+	train_preds = logs_network.predict(x_train)
+	preds = logs_network.predict(x_test)
 	print("LogS Train MAE = %.5f log units" % np.mean(np.abs(train_preds - logs_train)))
 	print("LogS Test MAE = %.5f log units" % np.mean(np.abs(preds - logs_test)))
 	plt.plot(train_preds, logs_train, "o", label="Train mols")
@@ -135,17 +127,15 @@ if __name__ == "__main__":
 	features, scale_indices = MLPWrapper.featurize_molecules(sol_mols)
 	mean, std = features[:,scale_indices].mean(axis=0), features[:,scale_indices].std(axis=0)
 	features[:,scale_indices] = (features[:,scale_indices] - mean) / std
-	logs_network = MLPRegressor(**grid_search.best_params_, hidden_layer_sizes=(512,256), early_stopping=True, max_iter=2000)
 	print("Fitting full neural network for solubility...")
 	logs_network.fit(features, logs)
-	preds = logs_network.predict(features)
 	print("Done! Saving LogS network weights.")
 	np.savez("logs_network_weights.npz", *logs_network.coefs_)
 	np.savez("logs_network_biases.npz", *logs_network.intercepts_)
 	print("LogS feature means: %s" % mean)
 	print("LogS feature stds: %s" % std)
 
-	mlp_model = MLPRegressor(hidden_layer_sizes=(512,265), early_stopping=True, max_iter=2000)
+	logd_network = MLPRegressor(hidden_layer_sizes=(512,256), activation="relu", alpha=0.001, solver="sgd", early_stopping=True, max_iter=2000)
 	lipo_mols, lipophilicities = filter_training_data("lipophilicity.csv", "logd")
 	shuffled_indices = np.arange(len(lipo_mols))
 	np.random.shuffle(shuffled_indices)
@@ -162,12 +152,9 @@ if __name__ == "__main__":
 	x_train[:,scale_indices] = (x_train[:,scale_indices] - x_mean) / x_std
 	x_test, scale_indices = MLPWrapper.featurize_molecules(mols_test)
 	x_test[:,scale_indices] = (x_test[:,scale_indices] - x_mean) / x_std
-	grid_search = GridSearchCV(mlp_model, hidden_layer_tests, refit=True, cv=5, scoring="neg_mean_absolute_error")
-	grid_search.fit(x_train, logd_train)
-	print("Best params:", grid_search.best_params_)
-	best_model = grid_search.best_estimator_
-	train_preds = best_model.predict(x_train)
-	preds = best_model.predict(x_test)
+	logd_network.fit(x_train, logd_train)
+	train_preds = logd_network.predict(x_train)
+	preds = logd_network.predict(x_test)
 	print("LogD Train MAE = %.5f log units" % np.mean(np.abs(train_preds - logd_train)))
 	print("LogD Test MAE = %.5f log units" % np.mean(np.abs(preds - logd_test)))
 	plt.plot(train_preds, logd_train, "o", label="Train mols")
@@ -181,10 +168,8 @@ if __name__ == "__main__":
 	features, scale_indices = MLPWrapper.featurize_molecules(lipo_mols)
 	mean, std = features[:,scale_indices].mean(axis=0), features[:,scale_indices].std(axis=0)
 	features[:,scale_indices] = (features[:,scale_indices] - mean) / std
-	logd_network = MLPRegressor(**grid_search.best_params_, hidden_layer_sizes=(512,256), early_stopping=True, max_iter=2000)
 	print("Fitting full neural network for lipophilicity...")
 	logd_network.fit(features, logd)
-	preds = logd_network.predict(features)
 	print("Done! Saving LogD network weights.")
 	np.savez("logd_network_weights.npz", *logd_network.coefs_)
 	np.savez("logd_network_biases.npz", *logd_network.intercepts_)

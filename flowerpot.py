@@ -28,10 +28,10 @@ TEXTBOX_HEIGHT = 30
 IMAGE_FRAME_X = 200
 IMAGE_FRAME_Y = 220
 
-LOGS_MEAN = np.array([59.85272991, 102.0204244])
-LOGS_STD = np.array([57.07686877, 61.51980086])
-LOGD_MEAN = np.array([78.00117738, 158.2493462])
-LOGD_STD = np.array([33.83845809, 47.38073137])
+LOGS_MEAN = np.array([65.26151553, 60.42754609, 103.15170248])
+LOGS_STD = np.array([38.36352282, 55.44868886, 58.93997877])
+LOGD_MEAN = np.array([102.87402925, 78.14599844, 158.14487235])
+LOGD_STD = np.array([30.67936449, 33.78076728, 47.4308476])
 
 def get_filename(filename_var, filename_entry):
 	"""Implements the 'Browse' button to select an input file."""
@@ -328,8 +328,8 @@ def calc_properties():
 				logs_biases = np.load("log_models/logs_network_biases.npz")
 				logd_weights = np.load("log_models/logd_network_weights.npz")
 				logd_biases = np.load("log_models/logd_network_biases.npz")
-				logs_model = MLPWrapper(logs_weights, logs_biases, LOGS_MEAN, LOGS_STD, activation="relu")
-				logd_model = MLPWrapper(logd_weights, logd_biases, LOGD_MEAN, LOGD_STD, activation="relu")
+				logs_model = MLPWrapper(logs_weights, logs_biases, LOGS_MEAN, LOGS_STD)
+				logd_model = MLPWrapper(logd_weights, logd_biases, LOGD_MEAN, LOGD_STD)
 			for prop in sorted(numerical_properties.keys()):
 				if numerical_properties[prop].get():
 					heading += prop + ","
