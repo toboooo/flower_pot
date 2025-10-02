@@ -107,7 +107,7 @@ The BOILED-EGG model of Daina and Zoete [1] describes molecules in two variables
 **Figure 3.** The full HARDBOILED-EGG model with the HIA and BBB data points superimposed atop the "egg". The BBB classifier is shown as the yellow "yolk" and the HIA classifier is shown as the "white" of the egg.
 
 
-### Physiochemical Properties
+### Physicochemical Properties
 
 The TPSA and LogP calculations were performed using the RDKit library and the appropriate functions are thus trivally called when required. We have implemented two data-driven options for the calculations of LogS and LogD. The first of these is the atomic contribution method of Wildman and Crippen [2], that is also used in the RDKit implementation of the prediction of LogP. This model estimates the value of a property as a sum of contributions from each atom in the molecule, given by
 
