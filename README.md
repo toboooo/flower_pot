@@ -5,7 +5,7 @@ This program (flowerpot.py) provides an interactive graphical user interface for
 
 ## Installation
 
-We have written installation scripts for Windows (`windows_install.bat`), macOS (`macos_install.sh`) and Linux (`linux_install.sh`). If everything on your system is prepared (most importantly, Python version >= 3.9, < 3.12 and git should be installed and available on the system PATH), when run from the command line the installer script will try to install Flower Pot and all of its dependencies, and will finish by leaving a convenience shell script in your Desktop folder. However, in the case that this does not go to plan, this program can be installed manually with the following steps:
+We have written installation scripts for Windows (`windows_install.bat`), macOS (`macos_install.sh`) and Linux (`linux_install.sh`). If everything on your system is prepared (most importantly, Python version >= 3.9, < 3.12 and git should be installed and available on the system PATH), when run from the command line the installer script will try to install Flower Pot and all of its dependencies, and will finish by leaving a convenience shell script in your Desktop folder. However, in the case that this does not go to plan, this program can be installed manually via the command line with the following steps:
 
 First, clone this repository from GitHub:
 
@@ -44,7 +44,7 @@ Now change into the cloned directory:
 cd flower_pot
 ```
 
-And the program should be ready to use.
+And the program should be ready to use by calling `python flowerpot.py`. You may need to reactivate your Python environment in new terminal sessions using the `activate` commands above.
 
 
 ## Dependencies
