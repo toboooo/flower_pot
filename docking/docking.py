@@ -429,15 +429,16 @@ def estimate_ic50(docking_scores, protein, program="vina"):
 		list of float, a list of the pedagogical IC50 values.
 	"""
 	prefactor = 0.5
-	scale = 10
+	vina_scale = 0.2
+	gold_scale = 7.5
 	ic50_estimations = list()
 	if program == "vina":
-		reference_values = {"26S_proteasome": -6.8, "BTHalpha": -12.1, "CF-IIbeta": -9.2, "CHK1": -10.4, "CYP17a": -11.6}
+		reference_values = {"26S_proteasome": -6.8, "BTHalpha": -10.7, "CF-IIbeta": -9.1, "CHK1": -9.8, "CYP17a": -10.3}
 		reference = reference_values[protein]
 		for score in docking_scores:
 			if score is not None:
 				difference = reference - score
-				ic50 = prefactor * 2**(-difference / scale)
+				ic50 = prefactor * 2**(-difference / vina_scale)
 				ic50_estimations.append(ic50)
 			else:
 				ic50_estimations.append(None)
@@ -447,7 +448,7 @@ def estimate_ic50(docking_scores, protein, program="vina"):
 		for score in docking_scores:
 			if score is not None:
 				difference = score - reference
-				ic50 = prefactor * 2**(-difference / scale)
+				ic50 = prefactor * 2**(-difference / gold_scale)
 				ic50_estimations.append(ic50)
 			else:
 				ic50_estimations.append(None)

@@ -157,7 +157,7 @@ When docking scores are calculated, the resulting values may be used to perform 
 
 $$\\mathrm{IC}\_{50} = p * 2^{-\\Delta d / s}$$
 
-where $\\Delta d$ is the difference between the current molecule's docking score and that of the reference molecule, p is a prefactor (set to a value of 0.5) and s is a scale factor (set to a value of 10). The purpose of these calculations is to provide students with an estimation of their molecule's binding quality, which increases rapidly as they make changes which make its binding affinity closer to, but below, that of the reference molecule, but also yields diminishing returns as the binding affinity is increased above that of the reference molecule. The reference values for each of the five target proteins were calculated from the following molecules (as represented by their SMILES strings):
+where $\\Delta d$ is the difference between the current molecule's docking score and that of the reference molecule, $p$ is a prefactor (set to a value of 0.5) and $s$ is a scale factor (set to a value of 7.5 for GOLD docking scores and 0.2 for Autodock Vina). The purpose of these calculations is to provide students with an estimation of their molecule's binding quality, which increases rapidly as they make changes which make its binding affinity closer to, but below, that of the reference molecule, but also yields diminishing returns as the binding affinity is increased above that of the reference molecule. The reference values for each of the five target proteins were calculated from the following molecules (as represented by their SMILES strings):
 
 * 26S_proteasome: ```CC(C)C[C@H](NC(=O)[C@H](Cc1ccccc1)NC(=O)c1cnccn1)B(O)O```
 * BTHalpha: ```Cc1ccc(NC(=O)c2ccc(CN3CCN(C)CC3)cc2)cc1Nc1nccc(-c2cccnc2)n1```
