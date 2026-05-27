@@ -5,7 +5,7 @@ This program (flowerpot.py) provides an interactive graphical user interface for
 
 ## Installation
 
-We have written installation scripts for Windows (`windows_install.bat`), macOS (`macos_install.sh`) and Linux (`linux_install.sh`). If everything on your system is prepared (most importantly, Python version >= 3.9, < 3.12 and git should be installed and available on the system PATH), when run from the command line the installer script will try to install Flower Pot and all of its dependencies, and will finish by leaving a convenience shell script in your Desktop folder. However, in the case that this does not go to plan, this program can be installed manually via the command line with the following steps:
+We have written installation scripts for Windows (`windows_install.bat`), macOS (`macos_install.sh`) and Linux (`linux_install.sh`). If everything on your system is prepared (most importantly, Python 3 and git should be installed and available on the system PATH), when run from the command line the installer script will try to install Flower Pot and all of its dependencies, and will finish by leaving a convenience shell script in your Desktop folder. However, in the case that this does not go to plan, this program can be installed manually via the command line with the following steps:
 
 First, clone this repository from GitHub:
 
@@ -49,18 +49,17 @@ And the program should be ready to use by calling `python flowerpot.py`. You may
 
 ## Dependencies
 
-This code was tested using Python version 3.9.18, and the following libraries. Whilst the program should not be highly sensitive to the specific version numbers, the meeko library that creates and formats Autodock Vina files currently requires the Python version to be at least 3.9, but no higher than 3.11.
+Whilst the program should not be highly sensitive to the specific version numbers of its dependencies, the meeko library that creates and formats Autodock Vina files does not currently have a stable API and may not be compatible with your version of Python. You may be able to use a different version of meeko that is compatible, or try to install a different version of Python if possible.
 
 * The standard library (os, sys, re, csv, tkinter, math, pathlib, multiprocessing, subprocess, datetime)
-* numpy==1.26.4
-* rdkit==2023.9.5
-* matplotlib==3.8.4
-* openpyxl==3.1.2
-* meeko==0.5.1
-* scipy==1.13.0
-* pandas==2.2.3
+* numpy
+* rdkit
+* matplotlib
+* openpyxl
+* meeko
+* scipy
 
-The scikit-learn library is not required for the use of the machine learning LogS/LogD predictions, but would be needed if one wished to retrain the neural network models.
+The scikit-learn library is not required for the use of the machine learning LogS/LogD predictions, but would be needed if one wished to retrain the neural network models as in the `log_models/log_ml_model.py` file.
 
 
 ## Usage
@@ -147,7 +146,7 @@ We also provide implementations of the PAINS [7], Brenk [8] and NIH [9,10] subst
 
 ### Molecular Docking
 
-Docking calculations using either Autodock Vina [11,12] or GOLD [13] may be performed against a set of five target proteins named: "26S_proteasome", "BTHalpha", "CF-IIbeta", "CHK1" and "CYP17a", with their structure files saved under the corresponding directories in the "docking" folder. Before docking, each molecule is embedded in 3D coordinates using RDKit and (if possible) its geometry is optimised using the MMFF94 force field [14] as implemented in RDKit. Once the docking score calculation is completed, the best poses found will be saved into a directory named `ligand_best_poses` in the same working directory from which flowerpot.py was run.
+Docking calculations using either Autodock Vina [11,12] or GOLD [13] may be performed against a set of five target proteins: 5IF3, 1IEP, 2W26, 1ZYS and 3RUK, with their structure files saved under the corresponding directories in the "docking" folder. Before docking, each molecule is embedded in 3D coordinates using RDKit and (if possible) its geometry is optimised using the MMFF94 force field [14] as implemented in RDKit. Once the docking score calculation is completed, the best poses found will be saved into a directory named `ligand_best_poses` in the same working directory from which flowerpot.py was run.
 
 For docking with Autodock Vina, the exhaustiveness parameter for the calculations is set to a value of 8 and the size of the box is set to 20.0 Angstrom in the x, y, and z directions. These settings may be found in the "*\_config.txt" files within each of the target protein directories in the "docking" folder.
 
@@ -159,13 +158,13 @@ $$\\mathrm{IC}\_{50} = p * 2^{-\\Delta d / s}$$
 
 where $\\Delta d$ is the difference between the current molecule's docking score and that of the reference molecule, $p$ is a prefactor (set to a value of 0.5) and $s$ is a scale factor (set to a value of 7.5 for GOLD docking scores and 0.2 for Autodock Vina). The purpose of these calculations is to provide students with an estimation of their molecule's binding quality, which increases rapidly as they make changes which make its binding affinity closer to, but below, that of the reference molecule, but also yields diminishing returns as the binding affinity is increased above that of the reference molecule. The reference values for each of the five target proteins were calculated from the following molecules (as represented by their SMILES strings):
 
-* 26S_proteasome: ```CC(C)C[C@H](NC(=O)[C@H](Cc1ccccc1)NC(=O)c1cnccn1)B(O)O```
-* BTHalpha: ```Cc1ccc(NC(=O)c2ccc(CN3CCN(C)CC3)cc2)cc1Nc1nccc(-c2cccnc2)n1```
-* CF-IIbeta: ```O=C(NC[C@H]1CN(c2ccc(N3CCOCC3=O)cc2)C(=O)O1)c1ccc(Cl)s1```
-* CHK1: ```CN1CCN(c2ccc(-c3cnc4[nH]cc(NC(=O)c5cccnc5)c4c3)cc2)CC1```
-* CYP17a: ```C[C@]12CC[C@H](O)CC1=CC[C@@H]1[C@@H]2CC[C@]2(C)C(c3cccnc3)=CC[C@@H]12```
+* 5IF3: ```CC(C)C[C@H](NC(=O)[C@H](Cc1ccccc1)NC(=O)c1cnccn1)B(O)O```
+* 1IEP: ```Cc1ccc(NC(=O)c2ccc(CN3CCN(C)CC3)cc2)cc1Nc1nccc(-c2cccnc2)n1```
+* 2W26: ```O=C(NC[C@H]1CN(c2ccc(N3CCOCC3=O)cc2)C(=O)O1)c1ccc(Cl)s1```
+* 1ZYS: ```CN1CCN(c2ccc(-c3cnc4[nH]cc(NC(=O)c5cccnc5)c4c3)cc2)CC1```
+* 3RUK: ```C[C@]12CC[C@H](O)CC1=CC[C@@H]1[C@@H]2CC[C@]2(C)C(c3cccnc3)=CC[C@@H]12```
 
-Note however that boron is not available as a valid atom type in Autodock Vina, therefore the reference value for 26S_proteasome in Autodock Vina was calculated from the SMILES string resulting from the replacement of the boron atom with carbon.
+Note however that boron is not available as a valid atom type in Autodock Vina, therefore the reference value for 5IF3 in Autodock Vina was calculated from the SMILES string resulting from the replacement of the boron atom with carbon.
 
 
 ## References

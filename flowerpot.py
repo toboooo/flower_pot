@@ -373,7 +373,7 @@ def calc_properties():
 		# Docking score and IC50 estimation
 		if docking_value.get():
 			# Dock with in-built proteins first
-			for protein in sorted(protein_selection.keys()):
+			for protein in protein_selection.keys():
 				if protein_selection[protein].get():
 					if program_value.get() == 0:
 						docking_scores = perform_gold_docking(mols, file_names, protein, gold_install_path.get())
@@ -656,8 +656,8 @@ if __name__ == "__main__":
 	gold_install_button.grid(row=20, column=2, sticky="w")
 	proteins_label = tk.Label(option_frame, text="Target Proteins:")
 	proteins_label.grid(row=21, column=0, sticky="w")
-	protein_selection = {"26S_proteasome": tk.BooleanVar(), "BTHalpha": tk.BooleanVar(), "CF-IIbeta": tk.BooleanVar(), "CHK1": tk.BooleanVar(), "CYP17a": tk.BooleanVar()}
-	for i, protein in enumerate(sorted(list(protein_selection.keys()))):
+	protein_selection = {"5IF3": tk.BooleanVar(), "1IEP": tk.BooleanVar(), "2W26": tk.BooleanVar(), "1ZYS": tk.BooleanVar(), "3RUK": tk.BooleanVar()}
+	for i, protein in enumerate(list(protein_selection.keys())):
 		protein_button = ttk.Checkbutton(option_frame, variable=protein_selection[protein], text=protein)
 		protein_button.grid(row=22, column=i, sticky="w")
 

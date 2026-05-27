@@ -433,7 +433,7 @@ def estimate_ic50(docking_scores, protein, program="vina"):
 	gold_scale = 7.5
 	ic50_estimations = list()
 	if program == "vina":
-		reference_values = {"26S_proteasome": -6.8, "BTHalpha": -10.7, "CF-IIbeta": -9.1, "CHK1": -9.8, "CYP17a": -10.3}
+		reference_values = {"5IF3": -6.8, "1IEP": -10.7, "2W26": -9.1, "1ZYS": -9.8, "3RUK": -10.3}
 		reference = reference_values[protein]
 		for score in docking_scores:
 			if score is not None:
@@ -443,7 +443,7 @@ def estimate_ic50(docking_scores, protein, program="vina"):
 			else:
 				ic50_estimations.append(None)
 	elif program == "gold":
-		reference_values = {"26S_proteasome": 71.78, "BTHalpha": 118.88, "CF-IIbeta": 96.62, "CHK1": 39.72, "CYP17a": 23.18}
+		reference_values = {"5IF3": 71.78, "1IEP": 118.88, "2W26": 96.62, "1ZYS": 39.72, "3RUK": 23.18}
 		reference = reference_values[protein]
 		for score in docking_scores:
 			if score is not None:
