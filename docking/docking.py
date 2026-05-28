@@ -4,6 +4,7 @@ import os
 import shutil
 import platform
 from subprocess import call
+from datetime import datetime
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -122,7 +123,10 @@ def run_vina_docking(ligand_filenames, receptor_file, config_file, protein):
 				pdbqt_mol = PDBQTMolecule.from_file(output_filename,
 					skip_typing=True)
 				rdkit_mol = RDKitMolCreate.from_pdbqt_mol(pdbqt_mol)[0]
-				sdf_savename = output_filename.replace("_out.pdbqt",
+				timestr = datetime.now().strftime("%d-%m-%H%M") + "_"
+				sdf_savename = output_filename.replace("ligand_best_poses/",
+					"ligand_best_poses/" + timestr)
+				sdf_savename = sdf_savename.replace("_out.pdbqt",
 					"_%s_vina.sdf" % protein)
 				with Chem.SDWriter(sdf_savename) as sdf_writer:
 					sdf_writer.write(rdkit_mol)
@@ -326,8 +330,10 @@ def process_gold_results(docking_scores, protein, file_name):
 							"molecule: %s." % file_name)
 						break
 					if os.path.exists(output_file):
+						timestr = datetime.now().strftime("%d-%m-%H%M") + "_"
 						shutil.move(output_file, "ligand_best_poses/%s" \
-							% (file_name + "_" + protein + "_gold.sdf"))
+							% (timestr + file_name + "_" + protein \
+							+ "_gold.sdf"))
 					else:
 						print("WARNING: No GOLD output file was found for "\
 							"molecule: %s." % file_name)
