@@ -37,7 +37,10 @@ def get_mol_list(smiles_strings, names=None):
 			if names is not None:
 				valid_names.append(names[i])
 		else:
-			errs.append("ERROR: %s - SanitizeMol failed. Flag: %s" % (smiles, str(rdkit.Chem.rdmolops.SanitizeFlags.values[sanitize_result])))
+			errs.append("ERROR: %s - SanitizeMol failed. Flag: %s" \
+				% (smiles,
+				str(rdkit.Chem.rdmolops.SanitizeFlags.values[sanitize_result]))
+			)
 	if names is None:
 		return mols, errs
 	else:

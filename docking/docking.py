@@ -7,14 +7,31 @@ from subprocess import call
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from meeko import MoleculePreparation
-from meeko import PDBQTWriterLegacy
-from meeko import PDBQTMolecule
-from meeko import RDKitMolCreate
+from meeko import MoleculePreparation, RDKitMolCreate
+from meeko import PDBQTWriterLegacy, PDBQTMolecule
 
-OVERWRITE_INSTRUCTIONS = {"SAVE OPTIONS": "save_score_in_file = 1\nsave_protein_torsions = 1\nclean_up_option delete_empty_directories\nclean_up_option delete_redundant_log_files\nclean_up_option save_top_n_solutions 1\nclean_up_option delete_all_initialised_ligands\n\n",
-"WRITE OPTIONS": "write_options = NO_LOG_FILES NO_LINK_FILES NO_RNK_FILES NO_GOLD_SOLN_LIGAND_MOL2_FILES NO_GOLD_PROTEIN_MOL2_FILE NO_LGFNAME_FILE NO_PLP_MOL2_FILES NO_PID_FILE NO_SEED_LOG_FILE NO_GOLD_ERR_FILE NO_FIT_PTS_FILES NO_ASP_MOL2_FILES NO_GOLD_LOG_FILE\n\n",
-"DATA FILES": "ligand_data_file ligand.sdf 10\nparam_file = DEFAULT\nset_ligand_atom_types = 1\nset_protein_atom_types = 0\ndirectory = .\ntordist_file = DEFAULT\nmake_subdirs = 0\nsave_lone_pairs = 1\nread_fitpts = 0\n\n"}
+OVERWRITE_INSTRUCTIONS = {
+	"SAVE OPTIONS": "save_score_in_file = 1\n"\
+		"save_protein_torsions = 1\n"\
+		"clean_up_option delete_empty_directories\n"\
+		"clean_up_option delete_redundant_log_files\n"\
+		"clean_up_option save_top_n_solutions 1\n"\
+		"clean_up_option delete_all_initialised_ligands\n\n",
+	"WRITE OPTIONS": "write_options = NO_LOG_FILES NO_LINK_FILES NO_RNK_FILES "\
+		"NO_GOLD_SOLN_LIGAND_MOL2_FILES NO_GOLD_PROTEIN_MOL2_FILE "\
+		"NO_LGFNAME_FILE NO_PLP_MOL2_FILES NO_PID_FILE NO_SEED_LOG_FILE "\
+		"NO_GOLD_ERR_FILE NO_FIT_PTS_FILES NO_ASP_MOL2_FILES "\
+		"NO_GOLD_LOG_FILE\n\n",
+	"DATA FILES": "ligand_data_file ligand.sdf 10\n"\
+		"param_file = DEFAULT\n"\
+		"set_ligand_atom_types = 1\n"\
+		"set_protein_atom_types = 0\n"\
+		"directory = .\n"\
+		"tordist_file = DEFAULT\n"\
+		"make_subdirs = 0\n"\
+		"save_lone_pairs = 1\n"\
+		"read_fitpts = 0\n\n",
+}
 
 def make_vina_ligands(mols, file_names):
 	"""
@@ -30,28 +47,36 @@ def make_vina_ligands(mols, file_names):
 	"""
 	ligand_filenames = list()
 	for i in range(len(mols)):
-		# Add hydrogens and optimise 3D geometries of the molecules before saving to PDBQT file.
+		# Add hydrogens and optimise 3D geometries of the molecules before
+		# saving to PDBQT file.
 		mols[i] = Chem.AddHs(mols[i])
 		AllChem.EmbedMolecule(mols[i])
 		ff_result = AllChem.MMFFOptimizeMolecule(mols[i])
 		# Try optimising again with more iterations if needed
 		if ff_result == 1:
-			print("WARNING: Force field geometry optimisation did not converge for molecule %s, trying again with more steps..." % file_names[i])
+			print("WARNING: Force field geometry optimisation did not "\
+				"converge for molecule %s, trying again with more steps..." \
+				% file_names[i])
 			AllChem.MMFFOptimizeMolecule(mols[i], maxIters=2000)
 		elif ff_result == -1:
-			print("WARNING: Force field could not be set up for molecule %s. Unable to optimise 3D geometry." % file_names[i])
+			print("WARNING: Force field could not be set up for molecule %s. "\
+				"Unable to optimise 3D geometry. Results may be inaccurate." \
+				% file_names[i])
 		preparator = MoleculePreparation(merge_these_atom_types=[])
 		mol_setups = preparator.prepare(mols[i])
 		for setup in mol_setups:
-			pdbqt_string, is_ok, error_msg = PDBQTWriterLegacy.write_string(setup)
+			pdbqt_string, is_ok, error_msg = \
+				PDBQTWriterLegacy.write_string(setup)
 			if is_ok:
-				pdbqt_filename = os.path.join("ligand_best_poses", file_names[i] + ".pdbqt")
+				pdbqt_filename = os.path.join("ligand_best_poses",
+					file_names[i] + ".pdbqt")
 				pdbqt_file = open(pdbqt_filename, "w")
 				pdbqt_file.write(pdbqt_string)
 				pdbqt_file.close()
 				ligand_filenames.append(pdbqt_filename)
 			else:
-				print("ERROR: Could not create PDBQT file for molecule %s. Error message: %s." % (file_names[i], error_msg))
+				print("ERROR: Could not create PDBQT file for molecule %s. "\
+					"Error message: %s." % (file_names[i], error_msg))
 				ligand_filenames.append(None)
 	return ligand_filenames
 
@@ -78,7 +103,8 @@ def run_vina_docking(ligand_filenames, receptor_file, config_file, protein):
 			continue
 		output_filename = ligand_filename.replace(".pdbqt", "_out.pdbqt")
 		print("Docking %s with %s..." % (ligand_filename, protein))
-		call(("vina", "--receptor", receptor_file, "--ligand", ligand_filename, "--config", config_file, "--out", output_filename))
+		call(("vina", "--receptor", receptor_file, "--ligand", ligand_filename,
+			"--config", config_file, "--out", output_filename))
 		if os.path.exists(output_filename):
 			found_score = False
 			with open(output_filename, "r") as output_file:
@@ -89,12 +115,15 @@ def run_vina_docking(ligand_filenames, receptor_file, config_file, protein):
 						found_score = True
 						break
 			if not found_score:
-				print("WARNING: Could not find VINA RESULT in output file: %s. Could not get docking score." % output_filename)
+				print("WARNING: Could not find VINA RESULT in output file: "\
+					"%s. Could not get docking score." % output_filename)
 				docking_scores.append(None)
 			else:
-				pdbqt_mol = PDBQTMolecule.from_file(output_filename, skip_typing=True)
+				pdbqt_mol = PDBQTMolecule.from_file(output_filename,
+					skip_typing=True)
 				rdkit_mol = RDKitMolCreate.from_pdbqt_mol(pdbqt_mol)[0]
-				sdf_savename = output_filename.replace("_out.pdbqt", "_%s_vina.sdf" % protein)
+				sdf_savename = output_filename.replace("_out.pdbqt",
+					"_%s_vina.sdf" % protein)
 				with Chem.SDWriter(sdf_savename) as sdf_writer:
 					sdf_writer.write(rdkit_mol)
 			try:
@@ -144,7 +173,8 @@ def perform_vina_docking(mols, file_names, protein):
 	# Prepare ligand files for all molecules
 	ligand_filenames = make_vina_ligands(mols, file_names)
 	# Perform the docking calculations
-	docking_scores = run_vina_docking(ligand_filenames, receptor_file, config_file, protein)
+	docking_scores = run_vina_docking(ligand_filenames, receptor_file,
+		config_file, protein)
 	return docking_scores
 
 def custom_vina_docking(mols, file_names, protein_filename, config_file):
@@ -165,7 +195,8 @@ def custom_vina_docking(mols, file_names, protein_filename, config_file):
 			each input molecule, using the user provided protein and
 			configuration.
 	"""
-	# Check that Vina is available, note protein and config files should already have been checked for existence
+	# Check that Vina is available, note protein and config files should already
+	# have been checked for existence
 	if shutil.which("vina") is None:
 		print("ERROR: 'vina' command was not found on PATH.")
 		return None
@@ -173,7 +204,8 @@ def custom_vina_docking(mols, file_names, protein_filename, config_file):
 	# Prepare ligand files for all molecules
 	ligand_filenames = make_vina_ligands(mols, file_names)
 	# Perform the docking calculations
-	docking_scores = run_vina_docking(ligand_filenames, protein_filename, config_file, "custom")
+	docking_scores = run_vina_docking(ligand_filenames, protein_filename,
+		config_file, "custom")
 	return docking_scores
 
 def check_gold_avail(gold_dir):
@@ -188,7 +220,8 @@ def check_gold_avail(gold_dir):
 		gold_dir = os.path.join(gold_dir, "GOLD")
 		print("Found GOLD installation at: %s" % gold_dir)
 	elif gold_dir != "" and not os.path.exists(os.path.join(gold_dir, "GOLD")):
-		print("WARNING: Could not find GOLD installation from specified path: %s." % gold_dir)
+		print("WARNING: Could not find GOLD installation from specified path: "\
+			"%s." % gold_dir)
 		gold_dir = None
 	else:
 		gold_dir = None
@@ -198,23 +231,30 @@ def check_gold_avail(gold_dir):
 		path_file.close()
 		if os.path.exists(os.path.join(gold_dir, "GOLD")):
 			gold_dir = os.path.join(gold_dir, "GOLD")
-			print("Found GOLD installation at: %s, from GOLD_INSTALLDIR.txt" % gold_dir)
+			print("Found GOLD installation at: %s, from GOLD_INSTALLDIR.txt" \
+				% gold_dir)
 		else:
-			print("WARNING: Could not find GOLD installation at: %s, from file GOLD_INSTALLDIR.txt" % gold_dir)
+			print("WARNING: Could not find GOLD installation at: %s, "\
+				"from file GOLD_INSTALLDIR.txt" % gold_dir)
 			gold_dir = None
 	if platform.system() == "Windows":
 		guess_dir = "C:\\Program Files\\CCDC\\ccdc-software\\gold"
 		bin_path = "gold\\d_win32\\bin\\gold_win32.exe"
 	elif platform.system() == "Darwin":
-		print("WARNING: GOLD usage has only been tested on Windows. Please note that using GOLD through Flower Pot may not work on macOS.")
+		print("WARNING: GOLD usage has only been tested on Windows. "\
+			"Please note that using GOLD through Flower Pot may not work on "\
+			"macOS.")
 		guess_dir = "/Applications/CCDC"
 		bin_path = "bin/gold_auto"
 	elif platform.system() == "Linux":
-		print("WARNING: GOLD usage has only been tested on Windows. Please note that using GOLD through Flower Pot may not work on Linux.")
+		print("WARNING: GOLD usage has only been tested on Windows. "\
+			"Please note that using GOLD through Flower Pot may not work on "\
+			"Linux.")
 		guess_dir = os.path.join("/home", os.getlogin(), "CCDC")
 		bin_path = "bin/gold_auto"
 	if gold_dir is None:
-		print("Searching for GOLD installation in guess directory: %s..." % guess_dir)
+		print("Searching for GOLD installation in guess directory: %s..." \
+			% guess_dir)
 		if not os.path.exists(guess_dir):
 			print("ERROR: Could not find GOLD installation directory.")
 			return None
@@ -223,7 +263,8 @@ def check_gold_avail(gold_dir):
 				print(folder)
 				if folder == "GOLD":
 					gold_dir = os.path.join(guess_dir, folder)
-					print("Found GOLD installation directory at: %s!" % gold_dir)
+					print("Found GOLD installation directory at: %s!" \
+						% gold_dir)
 					break
 		if gold_dir is None:
 			print("ERROR: Could not find GOLD installation directory.")
@@ -247,7 +288,9 @@ def make_gold_mol(mol, file_name):
 	if ff_result == 1:
 		AllChem.MMFFOptimizeMolecule(mol, maxIters=2000)
 	elif ff_result == -1:
-		print("WARNING: Force field could not be set up for molecule %s. Unable to optimise 3D geometry." % file_name)
+		print("WARNING: Force field could not be set up for molecule %s. "\
+			"Unable to optimise 3D geometry. Results may be inaccurate." \
+			% file_name)
 	with Chem.SDWriter("ligand.sdf") as sdf_writer:
 		sdf_writer.write(mol)
 
@@ -263,7 +306,8 @@ def process_gold_results(docking_scores, protein, file_name):
 			docked.
 	"""
 	if not os.path.exists("bestranking.lst"):
-		print("ERROR: GOLD did not write file 'bestranking.lst' for molecule: %s." % file_name)
+		print("ERROR: GOLD did not write file 'bestranking.lst' for molecule: "\
+			"%s." % file_name)
 		docking_scores.append(None)
 	else:
 		found_score = False
@@ -278,17 +322,22 @@ def process_gold_results(docking_scores, protein, file_name):
 					if len(line) >= 10:
 						output_file = line[9].strip("'")
 					else:
-						print("WARNING: No GOLD output file was found for molecule: %s." % file_name)
+						print("WARNING: No GOLD output file was found for "\
+							"molecule: %s." % file_name)
 						break
 					if os.path.exists(output_file):
-						shutil.move(output_file, "ligand_best_poses/%s" % (file_name + "_" + protein + "_gold.sdf"))
+						shutil.move(output_file, "ligand_best_poses/%s" \
+							% (file_name + "_" + protein + "_gold.sdf"))
 					else:
-						print("WARNING: No GOLD output file was found for molecule: %s." % file_name)
+						print("WARNING: No GOLD output file was found for "\
+							"molecule: %s." % file_name)
 					break
 				except ValueError:
-					print("WARNING: Invalid docking score found in 'bestranking.lst'.")
+					print("WARNING: Invalid docking score found in "\
+						"'bestranking.lst'.")
 		if not found_score:
-			print("ERROR: GOLD was unable to perform docking for molecule: %s with target protein: %s." % (file_name, protein))
+			print("ERROR: GOLD was unable to perform docking for molecule: %s "\
+				"with target protein: %s." % (file_name, protein))
 			docking_scores.append(None)
 
 def perform_gold_docking(mols, file_names, protein, gold_dir=""):
@@ -311,20 +360,24 @@ def perform_gold_docking(mols, file_names, protein, gold_dir=""):
 	if gold_command is None:
 		return None
 	elif not os.path.exists(gold_command):
-		print("ERROR: GOLD installation directory found, but executable %s was not." % gold_command)
+		print("ERROR: GOLD installation directory found, but executable %s "\
+			"was not." % gold_command)
 		return None
 	# Check required data files are present
 	if not os.path.exists(os.path.join("docking", protein, protein + ".mol2")):
-		print("ERROR: Required docking data file %s not found." % os.path.join("docking", protein, protein + ".mol2"))
+		print("ERROR: Required docking data file %s not found." \
+			% os.path.join("docking", protein, protein + ".mol2"))
 		return None
 	if not os.path.exists(os.path.join("docking", protein, "gold.conf")):
-		print("ERROR: Required docking data file %s not found." % os.path.join("docking", protein, "gold.conf"))
+		print("ERROR: Required docking data file %s not found." \
+			% os.path.join("docking", protein, "gold.conf"))
 		return None
 	os.makedirs("ligand_best_poses", exist_ok=True)
 	docking_scores = list()
 	for i in range(len(mols)):
 		make_gold_mol(mols[i], file_names[i])
-		print("Docking molecule: %s with target protein: %s" % (file_names[i], protein))
+		print("Docking molecule: %s with target protein: %s" \
+			% (file_names[i], protein))
 		call((gold_command, os.path.join("docking", protein, "gold.conf")))
 		process_gold_results(docking_scores, protein, file_names[i])
 	try:
@@ -344,7 +397,8 @@ def process_gold_conf(gold_conf_file):
 		gold_conf_file: str, the file name of the gold.conf file for a custom
 			job. This function assumes that the file exists and is valid.
 	"""
-	overwrite_fields = {"SAVE OPTIONS": False, "WRITE OPTIONS": False,  "DATA FILES": False}
+	overwrite_fields = {"SAVE OPTIONS": False, "WRITE OPTIONS": False,
+		"DATA FILES": False}
 	conf_file = open(gold_conf_file, "r")
 	lines = conf_file.readlines()
 	conf_file.close()
@@ -355,7 +409,8 @@ def process_gold_conf(gold_conf_file):
 		try:
 			line = next(lines)
 			possible_field = line.strip()
-			if possible_field in overwrite_fields.keys() and not overwrite_fields[possible_field]:
+			if overwrite_fields.get(possible_field) is not None \
+			and not overwrite_fields[possible_field]:
 				conf_file.write(line)
 				conf_file.write(OVERWRITE_INSTRUCTIONS[possible_field])
 				overwrite_fields[possible_field] = True
@@ -387,12 +442,14 @@ def custom_gold_docking(mols, file_names, conf_filename, gold_dir):
 		docking_scores: list of float, the docking scores for each molecule
 			calculated for the custom protein.
 	"""
-	# Check that GOLD is available, note that protein mol2 and gold.conf files should have already been checked for existence
+	# Check that GOLD is available, note that protein mol2 and gold.conf files
+	# should have already been checked for existence
 	gold_command = check_gold_avail(gold_dir)
 	if gold_command is None:
 		return None
 	elif not os.path.exists(gold_command):
-		print("ERROR: GOLD installation directory found, but executable %s was not." % gold_command)
+		print("ERROR: GOLD installation directory found, but executable %s "\
+			"was not." % gold_command)
 		return None
 	# Edit gold.conf file
 	process_gold_conf(conf_filename)
@@ -400,7 +457,8 @@ def custom_gold_docking(mols, file_names, conf_filename, gold_dir):
 	docking_scores = list()
 	for i in range(len(mols)):
 		make_gold_mol(mols[i], file_names[i])
-		print("Docking molecule: %s with configuration file: %s" % (file_names[i], conf_filename))
+		print("Docking molecule: %s with configuration file: %s" \
+			% (file_names[i], conf_filename))
 		call((gold_command, conf_filename))
 		process_gold_results(docking_scores, "custom", file_names[i])
 	try:
@@ -433,7 +491,8 @@ def estimate_ic50(docking_scores, protein, program="vina"):
 	gold_scale = 7.5
 	ic50_estimations = list()
 	if program == "vina":
-		reference_values = {"5IF3": -6.8, "1IEP": -10.7, "2W26": -9.1, "1ZYS": -9.8, "3RUK": -10.3}
+		reference_values = {"5IF3": -6.8, "1IEP": -10.7, "2W26": -9.1,
+			"1ZYS": -9.8, "3RUK": -10.3}
 		reference = reference_values[protein]
 		for score in docking_scores:
 			if score is not None:
@@ -443,7 +502,8 @@ def estimate_ic50(docking_scores, protein, program="vina"):
 			else:
 				ic50_estimations.append(None)
 	elif program == "gold":
-		reference_values = {"5IF3": 71.78, "1IEP": 118.88, "2W26": 96.62, "1ZYS": 39.72, "3RUK": 23.18}
+		reference_values = {"5IF3": 71.78, "1IEP": 118.88, "2W26": 96.62,
+			"1ZYS": 39.72, "3RUK": 23.18}
 		reference = reference_values[protein]
 		for score in docking_scores:
 			if score is not None:

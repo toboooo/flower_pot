@@ -115,10 +115,19 @@ if __name__ == "__main__":
 	sys.path.append("..")
 	from utils.mol_list import get_mol_list
 
-	METALS = ("Li", "Be", "Na", "Mg", "Al", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "Fr", "Ra", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv")
+	METALS = ("Li", "Be", "Na", "Mg", "Al", "K", "Ca", "Sc", "Ti", "V", "Cr",
+		"Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Rb", "Sr",
+		"Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
+		"Sb", "Te", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd",
+		"Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os",
+		"Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "Fr", "Ra", "Ac", "Th",
+		"Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No",
+		"Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl",
+		"Mc", "Lv")
 
 	def filter_training_data(filename, prop_key):
-		metal_regexes = tuple(re.compile(f"\[{metal}.*\]") for metal in METALS)
+		metal_regexes = tuple(re.compile(f"\\[{metal}.*\\]") \
+			for metal in METALS)
 		molecules = []
 		property_values = []
 		with open(filename, "r") as file:
@@ -150,7 +159,8 @@ if __name__ == "__main__":
 	logs = logs[shuffled_indices]
 	logs_model = FragmentLogModel("Crippen.txt")
 	train_thresh = int(0.8 * len(sol_mols))
-	mols_train, mols_test = shuffled_sol_mols[:train_thresh], shuffled_sol_mols[train_thresh:]
+	mols_train, mols_test = shuffled_sol_mols[:train_thresh], \
+		shuffled_sol_mols[train_thresh:]
 	logs_train, logs_test = logs[:train_thresh], logs[train_thresh:]
 	logs_model.fit(mols_train, logs_train)
 	train_predictions = logs_model.predict(mols_train)
@@ -179,7 +189,8 @@ if __name__ == "__main__":
 	logd = logd[shuffled_indices]
 	logd_model = FragmentLogModel("Crippen.txt")
 	train_thresh = int(0.8 * len(lipo_mols))
-	mols_train, mols_test = shuffled_lipo_mols[:train_thresh], shuffled_lipo_mols[train_thresh:]
+	mols_train, mols_test = shuffled_lipo_mols[:train_thresh], \
+		shuffled_lipo_mols[train_thresh:]
 	logd_train, logd_test = logd[:train_thresh], logd[train_thresh:]
 	logd_model.fit(mols_train, logd_train)
 	train_predictions = logd_model.predict(mols_train)

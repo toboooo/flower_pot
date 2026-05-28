@@ -50,7 +50,8 @@ class MLPWrapper():
 		if self.x_mean is None or self.x_std is None:
 			return None
 		x_values, scale_indices = MLPWrapper.featurize_molecules(mols)
-		x_values[:,scale_indices] = (x_values[:,scale_indices] - self.x_mean) / self.x_std
+		x_values[:,scale_indices] = (x_values[:,scale_indices] - self.x_mean) \
+			/ self.x_std
 		activation = x_values
 		for i in range(self.n_layers):
 			activation = np.dot(activation, self.weights[i])
@@ -67,10 +68,19 @@ if __name__ == "__main__":
 	from sklearn.neural_network import MLPRegressor
 	from rdkit import Chem
 
-	METALS = ("Li", "Be", "Na", "Mg", "Al", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "Fr", "Ra", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv")
+	METALS = ("Li", "Be", "Na", "Mg", "Al", "K", "Ca", "Sc", "Ti", "V", "Cr",
+		"Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Rb", "Sr",
+		"Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
+		"Sb", "Te", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd",
+		"Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os",
+		"Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "Fr", "Ra", "Ac", "Th",
+		"Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No",
+		"Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl",
+		"Mc", "Lv")
 
 	def filter_training_data(filename, prop_key):
-		metal_regexes = tuple(re.compile(f"\[{metal}.*\]") for metal in METALS)
+		metal_regexes = tuple(re.compile(f"\\[{metal}.*\\]") \
+			for metal in METALS)
 		molecules = []
 		property_values = []
 		with open(filename, "r") as file:
@@ -94,7 +104,8 @@ if __name__ == "__main__":
 		return molecules, property_values
 
 	np.random.seed(5)
-	logs_network = MLPRegressor(hidden_layer_sizes=(512,256), activation="relu", alpha=0.001, solver="sgd", early_stopping=True, max_iter=2000)
+	logs_network = MLPRegressor(hidden_layer_sizes=(512,256), activation="relu",
+		alpha=0.001, solver="sgd", early_stopping=True, max_iter=2000)
 	sol_mols, solubilities = filter_training_data("solubility.csv", "logs")
 	shuffled_indices = np.arange(len(sol_mols))
 	np.random.shuffle(shuffled_indices)
@@ -104,17 +115,20 @@ if __name__ == "__main__":
 	logs = np.array(solubilities)
 	logs = logs[shuffled_indices]
 	train_thresh = int(0.8 * len(sol_mols))
-	mols_train, mols_test = shuffled_sol_mols[:train_thresh], shuffled_sol_mols[train_thresh:]
+	mols_train, mols_test = shuffled_sol_mols[:train_thresh], \
+		shuffled_sol_mols[train_thresh:]
 	logs_train, logs_test = logs[:train_thresh], logs[train_thresh:]
 	x_train, scale_indices = MLPWrapper.featurize_molecules(mols_train)
-	x_mean, x_std = x_train[:,scale_indices].mean(axis=0), x_train[:,scale_indices].std(axis=0)
+	x_mean, x_std = x_train[:,scale_indices].mean(axis=0), \
+		x_train[:,scale_indices].std(axis=0)
 	x_train[:,scale_indices] = (x_train[:,scale_indices] - x_mean) / x_std
 	x_test, scale_indices = MLPWrapper.featurize_molecules(mols_test)
 	x_test[:,scale_indices] = (x_test[:,scale_indices] - x_mean) / x_std
 	logs_network.fit(x_train, logs_train)
 	train_preds = logs_network.predict(x_train)
 	preds = logs_network.predict(x_test)
-	print("LogS Train MAE = %.5f log units" % np.mean(np.abs(train_preds - logs_train)))
+	print("LogS Train MAE = %.5f log units" \
+		% np.mean(np.abs(train_preds - logs_train)))
 	print("LogS Test MAE = %.5f log units" % np.mean(np.abs(preds - logs_test)))
 	plt.plot(train_preds, logs_train, "o", label="Train mols")
 	plt.plot(preds, logs_test, "o", label="Test mols")
@@ -125,7 +139,8 @@ if __name__ == "__main__":
 	plt.clf()
 	logs = np.array(solubilities)
 	features, scale_indices = MLPWrapper.featurize_molecules(sol_mols)
-	mean, std = features[:,scale_indices].mean(axis=0), features[:,scale_indices].std(axis=0)
+	mean, std = features[:,scale_indices].mean(axis=0), \
+		features[:,scale_indices].std(axis=0)
 	features[:,scale_indices] = (features[:,scale_indices] - mean) / std
 	print("Fitting full neural network for solubility...")
 	logs_network.fit(features, logs)
@@ -135,8 +150,10 @@ if __name__ == "__main__":
 	print("LogS feature means: %s" % mean)
 	print("LogS feature stds: %s" % std)
 
-	logd_network = MLPRegressor(hidden_layer_sizes=(512,256), activation="relu", alpha=0.001, solver="sgd", early_stopping=True, max_iter=2000)
-	lipo_mols, lipophilicities = filter_training_data("lipophilicity.csv", "logd")
+	logd_network = MLPRegressor(hidden_layer_sizes=(512,256), activation="relu",
+		alpha=0.001, solver="sgd", early_stopping=True, max_iter=2000)
+	lipo_mols, lipophilicities = filter_training_data("lipophilicity.csv",
+		"logd")
 	shuffled_indices = np.arange(len(lipo_mols))
 	np.random.shuffle(shuffled_indices)
 	shuffled_lipo_mols = []
@@ -145,17 +162,20 @@ if __name__ == "__main__":
 	logd = np.array(lipophilicities)
 	logd = logd[shuffled_indices]
 	train_thresh = int(0.8 * len(lipo_mols))
-	mols_train, mols_test = shuffled_lipo_mols[:train_thresh], shuffled_lipo_mols[train_thresh:]
+	mols_train, mols_test = shuffled_lipo_mols[:train_thresh], \
+		shuffled_lipo_mols[train_thresh:]
 	logd_train, logd_test = logd[:train_thresh], logd[train_thresh:]
 	x_train, scale_indices = MLPWrapper.featurize_molecules(mols_train)
-	x_mean, x_std = x_train[:,scale_indices].mean(axis=0), x_train[:,scale_indices].std(axis=0)
+	x_mean, x_std = x_train[:,scale_indices].mean(axis=0), \
+		x_train[:,scale_indices].std(axis=0)
 	x_train[:,scale_indices] = (x_train[:,scale_indices] - x_mean) / x_std
 	x_test, scale_indices = MLPWrapper.featurize_molecules(mols_test)
 	x_test[:,scale_indices] = (x_test[:,scale_indices] - x_mean) / x_std
 	logd_network.fit(x_train, logd_train)
 	train_preds = logd_network.predict(x_train)
 	preds = logd_network.predict(x_test)
-	print("LogD Train MAE = %.5f log units" % np.mean(np.abs(train_preds - logd_train)))
+	print("LogD Train MAE = %.5f log units" \
+		% np.mean(np.abs(train_preds - logd_train)))
 	print("LogD Test MAE = %.5f log units" % np.mean(np.abs(preds - logd_test)))
 	plt.plot(train_preds, logd_train, "o", label="Train mols")
 	plt.plot(preds, logd_test, "o", label="Test mols")
@@ -166,7 +186,8 @@ if __name__ == "__main__":
 	plt.clf()
 	logd = np.array(lipophilicities)
 	features, scale_indices = MLPWrapper.featurize_molecules(lipo_mols)
-	mean, std = features[:,scale_indices].mean(axis=0), features[:,scale_indices].std(axis=0)
+	mean, std = features[:,scale_indices].mean(axis=0), \
+		features[:,scale_indices].std(axis=0)
 	features[:,scale_indices] = (features[:,scale_indices] - mean) / std
 	print("Fitting full neural network for lipophilicity...")
 	logd_network.fit(features, logd)

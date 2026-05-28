@@ -43,9 +43,13 @@ def make_egg_plots(mols, egg_features, image_names, hia_params, bbb_params):
 		ax.set_ylabel("LogP")
 		ax.set_xlim(-10, 200)
 		ax.set_ylim(-4, 8)
-		hia_ellipse = Ellipse((hia_params[0], hia_params[1]), 2*hia_params[2], 2*hia_params[3], angle=math.degrees(hia_params[4]), fill=True, color="white")
+		hia_ellipse = Ellipse((hia_params[0], hia_params[1]), 2 * hia_params[2],
+			2 * hia_params[3], angle=math.degrees(hia_params[4]), fill=True,
+			color="white")
 		ax.add_patch(hia_ellipse)
-		bbb_ellipse = Ellipse((bbb_params[0], bbb_params[1]), 2*bbb_params[2], 2*bbb_params[3], angle=math.degrees(bbb_params[4]), fill=True, color="yellow")
+		bbb_ellipse = Ellipse((bbb_params[0], bbb_params[1]), 2 * bbb_params[2],
+			2 * bbb_params[3], angle=math.degrees(bbb_params[4]), fill=True,
+			color="yellow")
 		ax.add_patch(bbb_ellipse)
 		ax.scatter(feat_vec[0], feat_vec[1], s=30.0, c="black", marker="x")
 		mol_img = Draw.MolToImage(mol)
@@ -77,14 +81,16 @@ def print_eggs(mols, file_names, make_plots=False):
 	pathlib.Path("images").mkdir(parents=True, exist_ok=True)
 	hia_ev = [-2.64497678, 3.62300812, 141.27928864, 1.11967626, 144.22556707]
 	hia_a = hia_ev[4] / 2
-	hia_c = math.sqrt((hia_ev[0] - hia_ev[2])**2 + (hia_ev[1] - hia_ev[3])**2) / 2
+	hia_c = math.sqrt((hia_ev[0] - hia_ev[2])**2 + (hia_ev[1] - hia_ev[3])**2) \
+		/ 2
 	hia_b = math.sqrt(hia_a**2 - hia_c**2)
 	hia_x = (hia_ev[0] + hia_ev[2]) / 2
 	hia_y = (hia_ev[1] + hia_ev[3]) / 2
 	hia_theta = math.atan((hia_ev[1] - hia_ev[3]) / (hia_ev[0] - hia_ev[2]))
 	bbb_ev = [-2.48156312, 3.20928199, 79.25676677, 4.3657658, 81.98390281]
 	bbb_a = bbb_ev[4] / 2
-	bbb_c = math.sqrt((bbb_ev[0] - bbb_ev[2])**2 + (bbb_ev[1] - bbb_ev[3])**2) / 2
+	bbb_c = math.sqrt((bbb_ev[0] - bbb_ev[2])**2 + (bbb_ev[1] - bbb_ev[3])**2) \
+		/ 2
 	bbb_b = math.sqrt(bbb_a**2 - bbb_c**2)
 	bbb_x = (bbb_ev[0] + bbb_ev[2]) / 2
 	bbb_y = (bbb_ev[1] + bbb_ev[3]) / 2
@@ -97,19 +103,27 @@ def print_eggs(mols, file_names, make_plots=False):
 		timecode = datetime.now().strftime("%d-%m-%H%M")
 		image_names.append("images/" + timecode + "_" + file_name + "_egg.png")
 	for mol, feat_vec in zip(mols, egg_features):
-		hia_focus_dists = math.sqrt((hia_ev[0] - feat_vec[0])**2 + (hia_ev[1] - feat_vec[1])**2) + math.sqrt((hia_ev[2] - feat_vec[0])**2 + (hia_ev[3] - feat_vec[1])**2)
+		hia_focus_dists = math.sqrt((hia_ev[0] - feat_vec[0])**2 \
+			+ (hia_ev[1] - feat_vec[1])**2) \
+			+ math.sqrt((hia_ev[2] - feat_vec[0])**2 \
+			+ (hia_ev[3] - feat_vec[1])**2)
 		if hia_focus_dists < hia_ev[4]:
 			hia_perms.append(1)
 		else:
 			hia_perms.append(0)
-		bbb_focus_dists = math.sqrt((bbb_ev[0] - feat_vec[0])**2 + (bbb_ev[1] - feat_vec[1])**2) + math.sqrt((bbb_ev[2] - feat_vec[0])**2 + (bbb_ev[3] - feat_vec[1])**2)
+		bbb_focus_dists = math.sqrt((bbb_ev[0] - feat_vec[0])**2 \
+			+ (bbb_ev[1] - feat_vec[1])**2) \
+			+ math.sqrt((bbb_ev[2] - feat_vec[0])**2 \
+			+ (bbb_ev[3] - feat_vec[1])**2)
 		if bbb_focus_dists < bbb_ev[4]:
 			bbb_perms.append(1)
 		else:
 			bbb_perms.append(0)
 	if make_plots:
 		if len(image_names) < MIN_MULTI_IMAGES:
-			make_egg_plots(mols, egg_features, image_names, (hia_x, hia_y, hia_a, hia_b, hia_theta), (bbb_x, bbb_y, bbb_a, bbb_b, bbb_theta))
+			make_egg_plots(mols, egg_features, image_names,
+				(hia_x, hia_y, hia_a, hia_b, hia_theta),
+				(bbb_x, bbb_y, bbb_a, bbb_b, bbb_theta))
 		else:
 			n_available_cores = multiprocessing.cpu_count()
 			if n_available_cores > 1:
@@ -118,7 +132,13 @@ def print_eggs(mols, file_names, make_plots=False):
 				n_used_cores = n_available_cores
 			seq_len = math.ceil(len(image_names) / n_used_cores)
 			pool = multiprocessing.Pool(n_used_cores)
-			processes = [pool.apply_async(make_egg_plots, args=(mols[seq_len*i:seq_len*i+seq_len], egg_features[seq_len*i:seq_len*i+seq_len], image_names[seq_len*i:seq_len*i+seq_len], (hia_x, hia_y, hia_a, hia_b, hia_theta), (bbb_x, bbb_y, bbb_a, bbb_b, bbb_theta))) for i in range(n_used_cores)]
+			processes = [pool.apply_async(make_egg_plots,
+				args=(mols[seq_len*i:seq_len*i+seq_len],
+					egg_features[seq_len*i:seq_len*i+seq_len],
+					image_names[seq_len*i:seq_len*i+seq_len],
+					(hia_x, hia_y, hia_a, hia_b, hia_theta),
+					(bbb_x, bbb_y, bbb_a, bbb_b, bbb_theta))) \
+				for i in range(n_used_cores)]
 			for p in processes:
 				p.get()
 			pool.close()

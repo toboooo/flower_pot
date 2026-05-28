@@ -89,9 +89,12 @@ def ellipse_classify(mol_features, ellipse_vectors):
 		outside the ellipse described by the ellipse vectors and 1 for the
 		molecules that are inside the ellipse.
 	"""
-	distances = np.linalg.norm(ellipse_vectors[:,np.newaxis,(0,1)] - mol_features[np.newaxis,:,:], axis=2)
-	distances += np.linalg.norm(ellipse_vectors[:,np.newaxis,(2,3)] - mol_features[np.newaxis,:,:], axis=2)
-	return (distances < ellipse_vectors[:,4].reshape(ellipse_vectors.shape[0], 1)).astype(int)
+	distances = np.linalg.norm(ellipse_vectors[:,np.newaxis,(0,1)] \
+		- mol_features[np.newaxis,:,:], axis=2)
+	distances += np.linalg.norm(ellipse_vectors[:,np.newaxis,(2,3)] \
+		- mol_features[np.newaxis,:,:], axis=2)
+	return (distances \
+		< ellipse_vectors[:,4].reshape(ellipse_vectors.shape[0], 1)).astype(int)
 
 def calc_mcc(classifications, labels):
 	"""
@@ -123,12 +126,14 @@ def calc_area(ellipse_vectors):
 	Returns:
 		float, the area of the ellipse.
 	"""
-	c2 = np.sum(np.square(ellipse_vectors[:,(0,1)] - ellipse_vectors[:,(2,3)]), axis=1) / 4
+	c2 = np.sum(np.square(ellipse_vectors[:,(0,1)] - ellipse_vectors[:,(2,3)]),
+		axis=1) / 4
 	a = ellipse_vectors[:,4] / 2
 	b = np.sqrt(np.abs(a**2 - c2))
 	return np.pi * a * b
 
-def optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=0.05, change_size=0.5, random_mult=0.025):
+def optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=0.05,
+change_size=0.5, random_mult=0.025):
 	"""
 	Performs 10 independent runs of 100,000 iteration Monte Carlo optimisation
 	on the initial ellipse parameters from the original BOILED-EGG model, now
@@ -163,14 +168,19 @@ def optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=0.05, c
 	best_mcc = np.max(mcc)
 	best_vector = ellipse_vectors[np.argmax(mcc)]
 	for i in range(100000):
-		change = np.random.uniform(-change_size, change_size, size=ellipse_vectors.shape)
+		change = np.random.uniform(-change_size, change_size,
+			size=ellipse_vectors.shape)
 		tentative_vectors = ellipse_vectors + change
 		classifications = ellipse_classify(mol_features, tentative_vectors)
 		mcc = calc_mcc(classifications, labels)
 		area = calc_area(tentative_vectors)
 		score = mcc - area_penalty * area
-		tentative_randoms = random_mult * np.random.uniform(0.0, 1.0, size=score.shape)
-		accept_indices = np.logical_and((score + tentative_randoms) > best_score, tentative_vectors[:,4] > 0.0)
+		tentative_randoms = random_mult \
+			* np.random.uniform(0.0, 1.0, size=score.shape)
+		accept_indices = np.logical_and(	
+			(score + tentative_randoms) > best_score,
+			tentative_vectors[:,4] > 0.0
+		)
 		ellipse_vectors[accept_indices] = tentative_vectors[accept_indices]
 		best_score[accept_indices] = score[accept_indices]
 		if np.max(mcc) > best_mcc:
@@ -178,7 +188,8 @@ def optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=0.05, c
 			best_vector = tentative_vectors[np.argmax(mcc)]
 	return best_vector, best_mcc
 
-def run_egg_optimisation(mol_features, ellipse_vectors, labels, seed, egg_type, area_penalty=0.05, change_size=0.5, random_mult=0.025):
+def run_egg_optimisation(mol_features, ellipse_vectors, labels, seed, egg_type,
+area_penalty=0.05, change_size=0.5, random_mult=0.025):
 	"""
 	Runs the ellipse optimisation routine and prints the results.
 	Args:
@@ -200,7 +211,9 @@ def run_egg_optimisation(mol_features, ellipse_vectors, labels, seed, egg_type, 
 			accepted.
 	"""
 	np.random.seed(seed)
-	best_vector, best_mcc = optimise_ellipse(mol_features, ellipse_vectors, labels, area_penalty=area_penalty, change_size=change_size, random_mult=random_mult)
+	best_vector, best_mcc = optimise_ellipse(mol_features, ellipse_vectors,
+		labels, area_penalty=area_penalty, change_size=change_size,
+		random_mult=random_mult)
 	print(egg_type, "MCC:", best_mcc, best_vector)
 
 
@@ -211,7 +224,11 @@ if __name__ == "__main__":
 	bbb_mols, bbb_err_msgs = get_mol_list(bbb_smiles)
 	hia_features = get_egg_features(hia_mols)
 	bbb_features = get_egg_features(bbb_mols)
-	hia_start_vectors = get_start_vectors(142.081, 8.74, np.radians(-1.031325), (71.051, 2.292))
-	bbb_start_vectors = get_start_vectors(82.061, 5.557, np.radians(-0.171887), (38.117, 3.177))
-	run_egg_optimisation(hia_features, hia_start_vectors, hia_labels, 5, "HIA", change_size=1.0)
-	run_egg_optimisation(bbb_features, bbb_start_vectors, bbb_labels, 5, "BBB", change_size=0.5)
+	hia_start_vectors = get_start_vectors(142.081, 8.74, np.radians(-1.031325),
+		(71.051, 2.292))
+	bbb_start_vectors = get_start_vectors(82.061, 5.557, np.radians(-0.171887),
+		(38.117, 3.177))
+	run_egg_optimisation(hia_features, hia_start_vectors, hia_labels, 5, "HIA",
+		change_size=1.0)
+	run_egg_optimisation(bbb_features, bbb_start_vectors, bbb_labels, 5, "BBB",
+		change_size=0.5)

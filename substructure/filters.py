@@ -64,9 +64,16 @@ def check_filters(mols, file_names, filter, print_images=False):
 		hit_names.append(substruct_names)
 		hit_counts.append(hit_count)
 		if print_images and len(matched_substructs) > 0:
-			img = Draw.MolsToGridImage([mol for i in range(len(matched_substructs))], molsPerRow=len(matched_substructs), subImgSize=(200,200), highlightAtomLists=matched_substructs, legends=[filter + ": " + substruct_name for substruct_name in substruct_names])
+			img = Draw.MolsToGridImage(
+				[mol for i in range(len(matched_substructs))],
+				molsPerRow=len(matched_substructs), subImgSize=(200,200),
+				highlightAtomLists=matched_substructs,
+				legends=[filter + ": " + substruct_name \
+					for substruct_name in substruct_names]
+			)
 			timecode = datetime.now().strftime("%d-%m-%H%M")
-			image_name = os.path.join("images", timecode + "_" + file_name + "_" + filter + ".png")
+			image_name = os.path.join("images",
+				timecode + "_" + file_name + "_" + filter + ".png")
 			image_names.append(image_name)
 			img.save(image_name)
 		else:
