@@ -1,6 +1,7 @@
 numpy
 rdkit
+scipy
 matplotlib
 openpyxl
 meeko
-scipy
+gemmi
