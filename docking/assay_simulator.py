@@ -746,20 +746,3 @@ docking_score_keys):
 	write_all_button.grid(row=14, column=3, sticky="nsew")
 	write_all_warn_label = tk.Label(simulator_frame, text="\n")
 	write_all_warn_label.grid(row=14, column=4, columnspan=18, sticky="nsew")
-
-
-if __name__ == "__main__":
-	window = tk.Tk()
-	window.title("Main")
-	button = tk.Button(text="Click",
-		command=lambda: build_simulator_window(window, 
-			[Chem.MolFromSmiles("ClC=CC=O"),
-				Chem.MolFromSmiles("c1ccccc1C(O)=O"),
-				Chem.MolFromSmiles("c1cccc2ccccc12")],
-			["molecule1", "molecule2", "naphalene"],
-			{"5IF3 Vina score": [-0.45, -0.71, -7.7],
-				"1IEP GOLD score": [50.22, 1.36, 117.0],
-				"Custom GOLD score": [44.02, 12.22, 75.73]},
-			("5IF3 Vina score", "1IEP GOLD score", "Custom GOLD score")))
-	button.grid(row=0, column=0)
-	window.mainloop()
