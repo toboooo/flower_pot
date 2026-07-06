@@ -174,7 +174,7 @@ Note however that boron is not available as a valid atom type in Autodock Vina, 
 
 $$\mathrm{IC}_{50}^{new} = \left(\mathrm{IC}_{50}^{ref}\right)^{\frac{score^{new}}{score^{ref}}}$$
 
-This is equivalent to scaling the log of the reference $\\mathrm{IC}\_{50}$ value by the ratio of the docking scores to give the log of the new compound's $\\mathrm{IC}\_{50}$. However, the $\\mathrm{IC}\_{50}$ value for each compound may be changed as desired.
+This is equivalent to scaling the log of the reference $\\mathrm{IC}\_{50}$ value by the ratio of the docking scores to give the log of the new compound's $\\mathrm{IC}\_{50}$. However, the $\\mathrm{IC}\_{50}$ value for each compound may be changed as desired. **NOTE**: If using the custom docking mode, then a reference compound will not be available and each input molecule will be given an $\\mathrm{IC}\_{50}$ value of 0.5 $\mu$M, which should be changed by the user.
 
 Assay results may be simulated via two modes. "Sigmoid" mode simulates the assay response as a function of the compound concentration using the equation:
 
