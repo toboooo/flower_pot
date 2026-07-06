@@ -18,7 +18,7 @@ class FragmentLogModel():
 		"""
 		if os.path.exists(fragments_file):
 			with open(fragments_file, "r") as file:
-				self.patterns = []
+				self.patterns = list()
 				for line in file:
 					if line.startswith("#"):
 						continue
@@ -128,8 +128,8 @@ if __name__ == "__main__":
 	def filter_training_data(filename, prop_key):
 		metal_regexes = tuple(re.compile(f"\\[{metal}.*\\]") \
 			for metal in METALS)
-		molecules = []
-		property_values = []
+		molecules = list()
+		property_values = list()
 		with open(filename, "r") as file:
 			reader = csv.DictReader(file)
 			for line in reader:
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 	sol_mols, solubilities = filter_training_data("solubility.csv", "logs")
 	shuffled_indices = np.arange(len(sol_mols))
 	np.random.shuffle(shuffled_indices)
-	shuffled_sol_mols = []
+	shuffled_sol_mols = list()
 	for index in shuffled_indices:
 		shuffled_sol_mols.append(sol_mols[index])
 	logs = np.array(solubilities)
@@ -182,7 +182,7 @@ if __name__ == "__main__":
 	lipo_mols, lipophilicities = filter_training_data("lipophilicity.csv", "logd")
 	shuffled_indices = np.arange(len(lipo_mols))
 	np.random.shuffle(shuffled_indices)
-	shuffled_lipo_mols = []
+	shuffled_lipo_mols = list()
 	for index in shuffled_indices:
 		shuffled_lipo_mols.append(lipo_mols[index])
 	logd = np.array(lipophilicities)

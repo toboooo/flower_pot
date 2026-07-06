@@ -96,9 +96,9 @@ def print_eggs(mols, file_names, make_plots=False):
 	bbb_y = (bbb_ev[1] + bbb_ev[3]) / 2
 	bbb_theta = math.atan((bbb_ev[1] - bbb_ev[3]) / (bbb_ev[0] - bbb_ev[2]))
 	egg_features = get_egg_features(mols)
-	hia_perms = []
-	bbb_perms = []
-	image_names = []
+	hia_perms = list()
+	bbb_perms = list()
+	image_names = list()
 	for file_name in file_names:
 		timecode = datetime.now().strftime("%d-%m-%H%M")
 		image_names.append("images/" + timecode + "_" + file_name + "_egg.png")

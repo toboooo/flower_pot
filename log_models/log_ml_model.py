@@ -12,7 +12,7 @@ class MLPWrapper():
 
 	@staticmethod
 	def fingerprint_molecules(mols):
-		fingerprints = []
+		fingerprints = list()
 		mfpgen = rdFingerprintGenerator.GetMorganGenerator(radius=3, fpSize=1024)
 		for mol in mols:
 			fingerprints.append(mfpgen.GetCountFingerprintAsNumPy(mol))
@@ -20,9 +20,9 @@ class MLPWrapper():
 
 	@staticmethod
 	def featurize_molecules(mols):
-		values = []
+		values = list()
 		for mol in mols:
-			mol_features = []
+			mol_features = list()
 			crippen_descriptors = CalcCrippenDescriptors(mol)
 			mol_features.append(crippen_descriptors[0])
 			mol_features.append(crippen_descriptors[1])
@@ -81,8 +81,8 @@ if __name__ == "__main__":
 	def filter_training_data(filename, prop_key):
 		metal_regexes = tuple(re.compile(f"\\[{metal}.*\\]") \
 			for metal in METALS)
-		molecules = []
-		property_values = []
+		molecules = list()
+		property_values = list()
 		with open(filename, "r") as file:
 			reader = csv.DictReader(file)
 			for line in reader:
@@ -109,7 +109,7 @@ if __name__ == "__main__":
 	sol_mols, solubilities = filter_training_data("solubility.csv", "logs")
 	shuffled_indices = np.arange(len(sol_mols))
 	np.random.shuffle(shuffled_indices)
-	shuffled_sol_mols = []
+	shuffled_sol_mols = list()
 	for index in shuffled_indices:
 		shuffled_sol_mols.append(sol_mols[index])
 	logs = np.array(solubilities)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 		"logd")
 	shuffled_indices = np.arange(len(lipo_mols))
 	np.random.shuffle(shuffled_indices)
-	shuffled_lipo_mols = []
+	shuffled_lipo_mols = list()
 	for index in shuffled_indices:
 		shuffled_lipo_mols.append(lipo_mols[index])
 	logd = np.array(lipophilicities)

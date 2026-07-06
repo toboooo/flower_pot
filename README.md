@@ -57,6 +57,7 @@ Whilst the program should not be highly sensitive to the specific version number
 * matplotlib
 * openpyxl
 * meeko
+* gemmi
 * scipy
 
 The scikit-learn library is not required for the use of the machine learning LogS/LogD predictions, but would be needed if one wished to retrain the neural network models as in the `log_models/log_ml_model.py` file.
@@ -78,15 +79,17 @@ The input and output files may be .csv files or .xlsx spreadsheets (unfortunatel
 
 A set of check buttons allow the user to select the calculations of which properties will be performed. The calculation of LogS and LogD may either be performed with a linear atomic contibution "Crippen" model or a pre-trained neural network. The selection of the "Print EGG" or any of the "Substructure Filters" options will also create a pop-up window displaying the visualisations of the HARDBOILED-EGG model or any detected toxicophores. The HARDBOILED-EGG and substructure filters will save the images that they produce into a folder within the `flower_pot` installation directory called `images`.
 
-The user may also request that docking calculations are performed for each of the input molecules on a selection of target proteins, using either Autodock Vina or GOLD. These docking scores can also be used in an estimation of each compound's $\\mathrm{IC}\_{50}$ that is suitable for teaching purposes only and does not correspond to any realistic prediction. In order to use the molecular docking feature, the "docking" directory, and all of the data files therein, must be present in the same working directory as the program. In order to use Autodock Vina for docking calculations, the "vina" executable must be available on the system PATH. The easiest way to achieve this is to locate the Autodock Vina installation folder and add the "bin" directory to the system PATH environment variable. In order to use GOLD, the installation folder must be provided to the program. This can either be achieved by entering the path into the box labelled "GOLD installation path:" at runtime or if one wishes to specify the installation directory persistently, the install path may be written to the first line of a text file called `GOLD_INSTALLDIR.txt` that is saved in the same working directory as the program. If neither of the above options are provided, the program will perform a short search into a pre-determined default guess directory to try to find an installation of GOLD. The above-mentioned GOLD installation directory must be the one in which the "GOLD" (note the upper-case letters) directory can be found. Note this must not be a lower-case "gold" folder or the "GOLD" folder itself, but the folder within which "GOLD" may be found. The docking calculations will not work if any other directory is provided.
+The user may also request that docking calculations are performed for each of the input molecules on a selection of target proteins, using either Autodock Vina or GOLD. In order to use the molecular docking feature, the "docking" directory must be present in the same working directory as the program and it should contain all of the files it came with. In order to use Autodock Vina for docking calculations, the "vina" executable must be available on the system PATH. The easiest way to achieve this is to locate the Autodock Vina installation folder and add the "bin" directory to the system PATH environment variable. In order to use GOLD, the installation folder must be provided to the program. This can either be achieved by entering the path into the box labelled "GOLD installation path:" at runtime or if one wishes to specify the installation directory persistently, the install path may be written to the first line of a text file called `GOLD_INSTALLDIR.txt` that is saved in the same working directory as the program. If neither of the above options are provided, the program will perform a short search into a pre-determined default guess directory to try to find an installation of GOLD. The above-mentioned GOLD installation directory must be the one in which the "GOLD" (note the upper-case letters) directory can be found. Note this must not be a lower-case "gold" folder or the "GOLD" folder itself, but the folder within which "GOLD" may be found. The docking calculations will not work if any other directory is provided.
 
 **Warning: Docking using GOLD has only been tested on Windows, not MacOS or Linux. Flower Pot may need modification to be able to use GOLD on these systems.**
 
 After the docking jobs are completed, the highest scoring ligand poses will be saved to a folder called `ligand_best_poses` within the `flower_pot` installation directory.
 
-The final area of the input region of the GUI allows the user to provide their own input files for "custom" docking calculations with either Autodock Vina or GOLD. This allows the user to perform docking calculations on protein targets beyond the five that are built-in to Flower Pot. To perform a custom Autodock Vina calculation, the user must provide a PDBQT file of the target protein as well as a config file. For custom GOLD calculations, a gold conf file (by default called "gold.conf" by GOLD) is all that is required. Before running a custom GOLD docking calculation, the "WRITE OPTIONS", "SAVE OPTIONS" and "DATA FILES" fields of the GOLD conf file will be overwritten. **However, for custom docking calculations with both GOLD and Autodock Vina, the user MUST ensure that the files are correct and otherwise suited to their requirements.**
+The GUI also allows the user to provide their own input files for "custom" docking calculations with either Autodock Vina or GOLD. Thus docking calculations may be performed on protein targets beyond the five that are built-in to Flower Pot. To perform a custom Autodock Vina calculation, the user must provide a PDBQT file of the target protein as well as a config file. For custom GOLD calculations, a gold conf file (by default called "gold.conf" by GOLD) is all that is required. Before running a custom GOLD docking calculation, the "WRITE OPTIONS", "SAVE OPTIONS" and "DATA FILES" fields of the GOLD conf file will be overwritten. **However, for custom docking calculations with both GOLD and Autodock Vina, the user MUST ensure that the files are correct and otherwise suited to their requirements.**
 
 Clicking the "Go" button performs the calculations and writes the outputs to the right text box, as well as the output spreadsheet (which will be named "output.csv" by default).
+
+Finally, once docking scores are calculated for each of the input molecules, the "Assay Simulator" button may then be used to start a pop-up window for the (pedagogical) simulation of experimental assays performed on each of the input molecules, as described in reference [2]. For the built-in protein targets, the computed docking scores are used to provide initial guess $\\mathrm{IC}\_{50}$ values for each compound, however the user may adjust this value as well as the simulated assay curve's properties to their choosing.
 
 
 ## Methods
@@ -110,11 +113,11 @@ The BOILED-EGG model of Daina and Zoete [1] describes molecules in two variables
 
 ### Physicochemical Properties
 
-The TPSA and LogP calculations were performed using the RDKit library and the appropriate functions are thus trivally called when required. We have implemented two data-driven options for the calculations of LogS and LogD. The first of these is the atomic contribution method of Wildman and Crippen [2], that is also used in the RDKit implementation of the prediction of LogP. This model estimates the value of a property as a sum of contributions from each atom in the molecule, given by
+The TPSA and LogP calculations were performed using the RDKit library and the appropriate functions are thus trivally called when required. We have implemented two data-driven options for the calculations of LogS and LogD. The first of these is the atomic contribution method of Wildman and Crippen [3], that is also used in the RDKit implementation of the prediction of LogP. This model estimates the value of a property as a sum of contributions from each atom in the molecule, given by
 
 $$\\mathrm{LogX} = \\sum_i n_i a_i$$
 
-where $i$ indexes each atom type known to the model, $n_i$ corresponds to the number of atoms of type $i$ within the molecule and $a_i$ represents the contribution of atom type $i$ to the total property value of the molecule. We used the same set of atom types as used in the RDKit implementation of Crippen's LogP calculations (the SMARTS strings of these atom types are available from [3]). For LogS, we acquired the AqSolDBc compiled solubility dataset from Llompart *et al.* [4], which consists of 9982 molecules and experimental solubility measurements (this data may be found in our file `log_models/solubility.csv`). For LogD, we utilised the lipophilicity dataset from the MoleculeNet benchmark [5] and supplemented this with the molecules in the dataset by Wang *et al.* [6] that were not already in the MoleculeNet dataset. This gave a total of 5147 molecules with experimental LogD measurements, and this combined dataset may be found in the file `log_models/lipophilicity.csv`. Before estimation of the atomic contributions, we filtered these data sets, removing all molecules that contained any element other than H, B, C, N, O, F, Si, P, S, Cl, Br or I and any molecule that had fewer than 3 heavy atoms.
+where $i$ indexes each atom type known to the model, $n_i$ corresponds to the number of atoms of type $i$ within the molecule and $a_i$ represents the contribution of atom type $i$ to the total property value of the molecule. We used the same set of atom types as used in the RDKit implementation of Crippen's LogP calculations (the SMARTS strings of these atom types are available from [4]). For LogS, we acquired the AqSolDBc compiled solubility dataset from Llompart *et al.* [5], which consists of 9982 molecules and experimental solubility measurements (this data may be found in our file `log_models/solubility.csv`). For LogD, we utilised the lipophilicity dataset from the MoleculeNet benchmark [6] and supplemented this with the molecules in the dataset by Wang *et al.* [7] that were not already in the MoleculeNet dataset. This gave a total of 5147 molecules with experimental LogD measurements, and this combined dataset may be found in the file `log_models/lipophilicity.csv`. Before estimation of the atomic contributions, we filtered these data sets, removing all molecules that contained any element other than H, B, C, N, O, F, Si, P, S, Cl, Br or I and any molecule that had fewer than 3 heavy atoms.
 
 With the datasets obtained and filtered, we extracted counts of each of the Crippen atom types for all of the molecules in each dataset, randomly split 80% of the molecules in each dataset into a "training" set and added the remaining 20% to a "test" set, and then used the linear least-squares solver from the numpy python library to obtain the $a_i$ atom type contribution coefficients from each training set. The mean absolute error (MAE) of the LogS model for the training data was 0.97813 log units and the MAE for the testing data was 1.01466 log units. The MAE of the LogD model for the training data 0.78180 log units and the MAE for the testing data was 0.78610. Scatter plots for the predictions of both models are shown in Figures 4 and 5.
 
@@ -143,22 +146,23 @@ With regards to the choice of which model is to be used, we note the following a
 
 ### Substructure Filters
 
-We also provide implementations of the PAINS [7], Brenk [8] and NIH [9,10] substructure filters, which are straightforwardly implemented by aquiring the corresponding lists of SMARTS strings for each of the filters from the RDKit library (found in the csv files in the "substructure" folder), and using RDKit again to detect substructure matches from the filters and highlight them to the user.
+We also provide implementations of the PAINS [8], Brenk [9] and NIH [10,11] substructure filters, which are straightforwardly implemented by aquiring the corresponding lists of SMARTS strings for each of the filters from the RDKit library (found in the csv files in the "substructure" folder), and using RDKit again to detect substructure matches from the filters and highlight them to the user.
 
 
 ### Molecular Docking
 
-Docking calculations using either Autodock Vina [11,12] or GOLD [13] may be performed against a set of five target proteins: 5IF3, 1IEP, 2W26, 1ZYS and 3RUK, with their structure files saved under the corresponding directories in the "docking" folder. Before docking, each molecule is embedded in 3D coordinates using RDKit and (if possible) its geometry is optimised using the MMFF94 force field [14] as implemented in RDKit. Once the docking score calculation is completed, the best poses found will be saved into a directory named `ligand_best_poses` in the same working directory from which flowerpot.py was run.
+Docking calculations using either Autodock Vina [12,13] or GOLD [14] may be performed against a set of five target proteins: 5IF3, 1IEP, 2W26, 1ZYS and 3RUK, with their structure files saved under the corresponding directories in the "docking" folder. Before docking, each molecule is embedded in 3D coordinates using RDKit and (if possible) its geometry is optimised using the MMFF94 force field [15] as implemented in RDKit. Once the docking score calculation is completed, the best poses found will be saved into a directory named `ligand_best_poses` in the same working directory from which flowerpot.py was run.
 
 For docking with Autodock Vina, the exhaustiveness parameter for the calculations is set to a value of 8 and the size of the box is set to 20.0 Angstrom in the x, y, and z directions. These settings may be found in the "*\_config.txt" files within each of the target protein directories in the "docking" folder.
 
 For docking with GOLD, the calculation settings are defined in the "gold.conf" files within each target protein's directory within the "docking" folder, with the receptor binding site defined by the "cavity.atoms" file.
 
-When docking scores are calculated, the resulting values may be used to perform estimations of $\\mathrm{IC}\_{50}$ that may be used for teaching purposes, based on the difference between a current molecule's docking score and that of a reference molecule which shows a good binding affinity for a selected protein. The equation used for these calculations is:
 
-$$\\mathrm{IC}\_{50} = p * 2^{-\\Delta d / s}$$
+### Assay Simulator
 
-where $\\Delta d$ is the difference between the current molecule's docking score and that of the reference molecule, $p$ is a prefactor (set to a value of 0.5) and $s$ is a scale factor (set to a value of 7.5 for GOLD docking scores and 0.2 for Autodock Vina). The purpose of these calculations is to provide students with an estimation of their molecule's binding quality, which increases rapidly as they make changes which make its binding affinity closer to, but below, that of the reference molecule, but also yields diminishing returns as the binding affinity is increased above that of the reference molecule. The reference values for each of the five target proteins were calculated from the following molecules (as represented by their SMILES strings):
+Once docking scores are calculated, the "Assay Simulation" button allows the user to perform simulations of experimental drug assays for teaching purposes, as described in reference [2].
+
+For the five built-in protein targets, we have collected the following set of reference compounds and computed their docking scores with GOLD and Autodock Vina:
 
 * 5IF3: ```CC(C)C[C@H](NC(=O)[C@H](Cc1ccccc1)NC(=O)c1cnccn1)B(O)O```
 * 1IEP: ```Cc1ccc(NC(=O)c2ccc(CN3CCN(C)CC3)cc2)cc1Nc1nccc(-c2cccnc2)n1```
@@ -166,35 +170,49 @@ where $\\Delta d$ is the difference between the current molecule's docking score
 * 1ZYS: ```CN1CCN(c2ccc(-c3cnc4[nH]cc(NC(=O)c5cccnc5)c4c3)cc2)CC1```
 * 3RUK: ```C[C@]12CC[C@H](O)CC1=CC[C@@H]1[C@@H]2CC[C@]2(C)C(c3cccnc3)=CC[C@@H]12```
 
-Note however that boron is not available as a valid atom type in Autodock Vina, therefore the reference value for 5IF3 in Autodock Vina was calculated from the SMILES string resulting from the replacement of the boron atom with carbon.
+Note however that boron is not available as a valid atom type in Autodock Vina, therefore the reference value for 5IF3 in Autodock Vina was calculated from the molecule resulting from the replacement of the boron atom with carbon in the SMILES string. Each of these reference compounds is assumed to have an $\\mathrm{IC}\_{50}$ value of 0.5 $\mu$M and guess $\\mathrm{IC}\_{50}$ values are estimated for new input compounds by raising the value for the reference compound to the power of the ratio between their docking scores:
+
+$$\mathrm{IC}_{50}^{new} = \left(\mathrm{IC}_{50}^{ref}\right)^{\frac{score^{new}}{score^{ref}}}$$
+
+This is equivalent to scaling the log of the reference $\\mathrm{IC}\_{50}$ value by the ratio of the docking scores to give the log of the new compound's $\\mathrm{IC}\_{50}$. However, the $\\mathrm{IC}\_{50}$ value for each compound may be changed as desired.
+
+Assay results may be simulated via two modes. "Sigmoid" mode simulates the assay response as a function of the compound concentration using the equation:
+
+$$\mathrm{Response} = \mathrm{Response_{Min}} + \frac{\mathrm{Response_{Max}} - \mathrm{Response_{Min}}}{1 + \mathrm{[conc]} / \mathrm{IC}_{50}}$$
+
+Where $\\mathrm{Response\_{Min}}$ and $\\mathrm{Response\_{Max}}$ are the (user-specified) minimum and maximum response values from the assay function. "Line" mode simulates the assay response as a constant value equal to the $\\mathrm{IC}\_{50}$ of the compound.
+
+The concentration (x-axis) values are derived from a specified initial concentration, and a dilution factor that is applied to the initial concentration a specified number of times. Experimental noise is simulated by applying zero-mean Gaussian noise with a specified standard deviation to each response value, repeated a specified number of times. The simulated noisy data for each repeat may be written to output CSV files to be provided to students.
 
 
 ## References
 
 [1]. A. Daina and V. Zoete, A BOILED-Egg To Predict Gastrointestinal Absorption and Brain Penetration of Small Molecules, *ChemMedChem*, 2016, **11**, 1117-1121, DOI: 10.1002/cmdc.201600182.
 
-[2]. S. A. Wildman and G. M. Crippen, Prediction of Physicochemical Parameters by Atomic Contributions, *J. Chem. Inf. Comput. Sci.*, 1999, **39**, 868–873, DOI: 10.1021/ci990307l.
+[2]. C. A. Dodson, S. E. Flower, M. Thomas, A Multidisciplinary Team-Based Classroom Exercise for Small Molecule Drug Discovery, *J. Chem. Ed.*, 2023, **100**, 3320-3332, DOI: 10.1021/acs.jchemed.3c00066.
 
-[3]. rdkit/Data/Crippen.txt, https://github.com/rdkit/rdkit/blob/master/Data/Crippen.txt, [accessed May 2024].
+[3]. S. A. Wildman and G. M. Crippen, Prediction of Physicochemical Parameters by Atomic Contributions, *J. Chem. Inf. Comput. Sci.*, 1999, **39**, 868–873, DOI: 10.1021/ci990307l.
 
-[4] P. Llompart, C. Minoletti, S. Baybekov, D. Horvath, G. Marcou and A. Varnek, Will we ever be able to accurately predict solubility?, *Sci. Data*, 2024, **11**, 303, DOI: 10.1038/s41597-024-03105-6.
+[4]. rdkit/Data/Crippen.txt, https://github.com/rdkit/rdkit/blob/master/Data/Crippen.txt, [accessed May 2024].
 
-[5]. Z. Wu, B. Ramsundar, E. N. Feinberg, J. Gomes, C. Geniesse, A. S. Pappu, K. Leswingd and V. Pande, MoleculeNet: a benchmark for molecular machine learning, *Chem. Sci.*, 2018, **9**, 513-530, DOI: 10.1039/C7SC02664A.
+[5] P. Llompart, C. Minoletti, S. Baybekov, D. Horvath, G. Marcou and A. Varnek, Will we ever be able to accurately predict solubility?, *Sci. Data*, 2024, **11**, 303, DOI: 10.1038/s41597-024-03105-6.
 
-[6]. J.-B. Wang, D.-S. Cao, M.-F. Zhu, Y.-H. Yun, N. Xiao, Y.-Z. Liang, In silico evaluation of logD7.4 and comparison with other prediction methods, *J. Chemomet.* 2015, **29**, 389-398, DOI: 10.1002/cem.2718.
+[6]. Z. Wu, B. Ramsundar, E. N. Feinberg, J. Gomes, C. Geniesse, A. S. Pappu, K. Leswingd and V. Pande, MoleculeNet: a benchmark for molecular machine learning, *Chem. Sci.*, 2018, **9**, 513-530, DOI: 10.1039/C7SC02664A.
 
-[7]. J. B. Baell, G. A. Holloway, New Substructure Filters for Removal of Pan Assay Interference Compounds (PAINS) from Screening Libraries and for Their Exclusion in Bioassays, *J. Med. Chem.*, 2010, **53**, 2719–2740, DOI: 10.1021/jm901137j.
+[7]. J.-B. Wang, D.-S. Cao, M.-F. Zhu, Y.-H. Yun, N. Xiao, Y.-Z. Liang, In silico evaluation of logD7.4 and comparison with other prediction methods, *J. Chemomet.* 2015, **29**, 389-398, DOI: 10.1002/cem.2718.
 
-[8]. R. Brenk, A. Schipani, D. James, A. Krasowski, I. H. Gilbert, J. Frearson, P. G. Wyatt, Lessons Learnt from Assembling Screening Libraries for Drug Discovery for Neglected Diseases, *ChemMedChem*, 2008, **3**, 435–444, DOI: 10.1002/cmdc.200700139.
+[8]. J. B. Baell, G. A. Holloway, New Substructure Filters for Removal of Pan Assay Interference Compounds (PAINS) from Screening Libraries and for Their Exclusion in Bioassays, *J. Med. Chem.*, 2010, **53**, 2719–2740, DOI: 10.1021/jm901137j.
 
-[9]. A. Jadhav, R. S. Ferreira, C. Klumpp, B. T. Mott, C. P. Austin, J. Inglese, C. J. Thomas, D. J. Maloney, B. K. Shoichet, A. Simeonov, Quantitative Analyses of Aggregation, Autofluorescence, and Reactivity Artifacts in a Screen for Inhibitors of a Thiol Protease, *J. Med. Chem.*, 2010, **53**, 37–51, DOI: 10.1021/jm901070c.
+[9]. R. Brenk, A. Schipani, D. James, A. Krasowski, I. H. Gilbert, J. Frearson, P. G. Wyatt, Lessons Learnt from Assembling Screening Libraries for Drug Discovery for Neglected Diseases, *ChemMedChem*, 2008, **3**, 435–444, DOI: 10.1002/cmdc.200700139.
 
-[10]. R. G. Doveston, P. Tosatti, M. Dow, D. J. Foley, H. Y. Li, A. J. Campbell, D. House, I. Churcher, S. P. Marsden, A. Nelson, A Unified Lead-Oriented Synthesis of over Fifty Molecular Scaffolds, *Org. Biomol. Chem.*, 2014, **13**, 859–865, DOI: 10.1039/C4OB02287D.
+[10]. A. Jadhav, R. S. Ferreira, C. Klumpp, B. T. Mott, C. P. Austin, J. Inglese, C. J. Thomas, D. J. Maloney, B. K. Shoichet, A. Simeonov, Quantitative Analyses of Aggregation, Autofluorescence, and Reactivity Artifacts in a Screen for Inhibitors of a Thiol Protease, *J. Med. Chem.*, 2010, **53**, 37–51, DOI: 10.1021/jm901070c.
 
-[11]. O. Trott, A. J. Olson, AutoDock Vina: improving the speed and accuracy of docking with a new scoring function, efficient optimization, and multithreading, *J. Comp. Chem.*, 2010, **31**, 455-461, DOI: 10.1002/jcc.21334.
+[11]. R. G. Doveston, P. Tosatti, M. Dow, D. J. Foley, H. Y. Li, A. J. Campbell, D. House, I. Churcher, S. P. Marsden, A. Nelson, A Unified Lead-Oriented Synthesis of over Fifty Molecular Scaffolds, *Org. Biomol. Chem.*, 2014, **13**, 859–865, DOI: 10.1039/C4OB02287D.
 
-[12]. J. Eberhardt, D. Santo-Martins, A. F. Tillack, S. Forli, AutoDock Vina 1.2.0: New Docking Methods, Expanded Force Field, and Python Bindings, *J. Chem. Inf. Model.*, 2021, **61**, 3891-3898, DOI: 10.1021/acs.jcim.1c00203.
+[12]. O. Trott, A. J. Olson, AutoDock Vina: improving the speed and accuracy of docking with a new scoring function, efficient optimization, and multithreading, *J. Comp. Chem.*, 2010, **31**, 455-461, DOI: 10.1002/jcc.21334.
 
-[13]. G. Jones, P. Willett, R. C. Glen, A. R. Leach and R. Taylor, Development and Validation of a Genetic Algorithm for Flexible Docking, *J. Mol. Biol.*, 1997, **267**, 727-748, DOI: 10.1006/jmbi.1996.0897.
+[13]. J. Eberhardt, D. Santo-Martins, A. F. Tillack, S. Forli, AutoDock Vina 1.2.0: New Docking Methods, Expanded Force Field, and Python Bindings, *J. Chem. Inf. Model.*, 2021, **61**, 3891-3898, DOI: 10.1021/acs.jcim.1c00203.
 
-[14]. T. A. Halgren, Merck molecular force field. I. Basis, form, scope, parameterization, and performance of MMFF94", *J. Comp. Chem.*, 1996, **17**, 490-519, DOI: 10.1002/(SICI)1096-987X(199604)17:5/6<490::AID-JCC1>3.0.CO;2-P.
+[14]. G. Jones, P. Willett, R. C. Glen, A. R. Leach and R. Taylor, Development and Validation of a Genetic Algorithm for Flexible Docking, *J. Mol. Biol.*, 1997, **267**, 727-748, DOI: 10.1006/jmbi.1996.0897.
+
+[15]. T. A. Halgren, Merck molecular force field. I. Basis, form, scope, parameterization, and performance of MMFF94", *J. Comp. Chem.*, 1996, **17**, 490-519, DOI: 10.1002/(SICI)1096-987X(199604)17:5/6<490::AID-JCC1>3.0.CO;2-P.

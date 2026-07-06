@@ -22,9 +22,9 @@ def get_mol_list(smiles_strings, names=None):
 		valid_names: list of str, a list of titles associated with all valid
 			molecules.
 	"""
-	mols = []
-	errs = []
-	valid_names = []
+	mols = list()
+	errs = list()
+	valid_names = list()
 	for i, smiles in enumerate(smiles_strings):
 		mol = Chem.MolFromSmiles(smiles, sanitize=False)
 		if mol is None:

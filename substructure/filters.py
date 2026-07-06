@@ -17,8 +17,8 @@ def get_filters(filter_name):
 		pattern_names: list of str, a list of the names of each substructure in
 			the filter.
 	"""
-	smarts_strings = []
-	pattern_names = []
+	smarts_strings = list()
+	pattern_names = list()
 	file = open("substructure/" + filter_name.lower() + ".csv", "r")
 	csv_reader = csv.DictReader(file)
 	for line in csv_reader:
@@ -41,19 +41,16 @@ def check_filters(mols, file_names, filter, print_images=False):
 		print_images: optional, bool, whether or not images will be drawn.
 	Returns:
 		image_names: list of str, the names of the image files that were drawn.
-		hit_names: list of str, the names of the substructures that were
-			detected in each molecule.
 		hit_counts: list of int, the numbers of substructures in the filter that
 			each molecule contained.
 	"""
 	pathlib.Path("images").mkdir(parents=True, exist_ok=True)
-	image_names = []
-	hit_names = []
-	hit_counts = []
+	image_names = list()
+	hit_counts = list()
 	patterns, pattern_names = get_filters(filter)
 	for mol, file_name in zip(mols, file_names):
-		matched_substructs = []
-		substruct_names = []
+		matched_substructs = list()
+		substruct_names = list()
 		hit_count = 0
 		for pattern, name in zip(patterns, pattern_names):
 			if mol.HasSubstructMatch(pattern):
@@ -61,7 +58,6 @@ def check_filters(mols, file_names, filter, print_images=False):
 				hit_count += 1
 				if print_images:
 					matched_substructs.append(mol.GetSubstructMatch(pattern))
-		hit_names.append(substruct_names)
 		hit_counts.append(hit_count)
 		if print_images and len(matched_substructs) > 0:
 			img = Draw.MolsToGridImage(
@@ -78,4 +74,4 @@ def check_filters(mols, file_names, filter, print_images=False):
 			img.save(image_name)
 		else:
 			image_names.append(None)
-	return image_names, hit_names, hit_counts
+	return image_names, hit_counts

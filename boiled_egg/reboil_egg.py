@@ -42,7 +42,7 @@ def get_egg_features(mols):
 		2d numpy array containing TSPA values for all molecules in the first
 		column and LogP values in the second column.
 	"""
-	features = []
+	features = list()
 	for mol in mols:
 		features.append([Descriptors.TPSA(mol), Descriptors.MolLogP(mol)])
 	return np.array(features)
@@ -60,8 +60,8 @@ def read_from_file(filename):
 	"""
 	file = open(filename, "r")
 	csv_reader = csv.DictReader(file)
-	smiles = []
-	labels = []
+	smiles = list()
+	labels = list()
 	for line in csv_reader:
 		smiles.append(line["SMILES"])
 		if "hia" in filename:
