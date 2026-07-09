@@ -539,16 +539,18 @@ docking_score_keys):
 			REFERENCE_MOLS[docking_score_key], size=(100,100)))
 		reference_image_label = tk.Label(simulator_frame, image=reference_image,
 			text=None)
-		reference_image_label.grid(row=5, column=0, sticky="nsew")
 		reference_score_label = tk.Label(simulator_frame,
 			text="Reference\n" + docking_score_key + ":\n" + \
 			str(REFERENCE_SCORES[docking_score_key]))
 	else:
 		reference_image = ImageTk.PhotoImage(Image.new("RGBA", (100, 100),
 			(0, 0, 0, 0)))
-		reference_image_label.configure(image=reference_image, text=None)
-		reference_score_label.configure(text="No reference\ncompound for\n" + \
+		reference_image_label = tk.Label(simulator_frame, image=reference_image,
+			text=None)
+		reference_score_label = tk.Label(simulator_frame,
+			text="No reference\ncompound for\n" + \
 			docking_score_key.rstrip(" score"))
+	reference_image_label.grid(row=5, column=0, sticky="nsew")
 	reference_score_label.grid(row=5, column=1, sticky="nsew")
 
 	tk.Label(simulator_frame, text="IC50 / M:").grid(row=6, column=0,

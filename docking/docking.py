@@ -388,7 +388,14 @@ def perform_gold_docking(mols, file_names, protein, gold_dir=""):
 		process_gold_results(docking_scores, protein, file_names[i])
 	try:
 		os.remove("ligand.sdf")
+	except FileNotFoundError:
+		pass
+	try:
 		os.remove("bestranking.lst")
+	except FileNotFoundError:
+		pass
+	try:
+		os.remove("gold_ligand_m1.sdf")
 	except FileNotFoundError:
 		pass
 	return docking_scores
@@ -469,7 +476,14 @@ def custom_gold_docking(mols, file_names, conf_filename, gold_dir):
 		process_gold_results(docking_scores, "custom", file_names[i])
 	try:
 		os.remove("ligand.sdf")
+	except FileNotFoundError:
+		pass
+	try:
 		os.remove("bestranking.lst")
+	except FileNotFoundError:
+		pass
+	try:
+		os.remove("gold_ligand_m1.sdf")
 	except FileNotFoundError:
 		pass
 	return docking_scores

@@ -81,7 +81,7 @@ def run_assay_simulator():
 	global protein_selection
 	global window, mols, file_names
 	docking_score_keys = tuple(score_key for score_key in [protein + program \
-		for protein in protein_selection.keys() \
+		for protein in list(protein_selection.keys()) + ["Custom"] \
 		for program in (" GOLD score", " Vina score")] \
 		if properties.get(score_key) is not None)
 	if len(properties) == 0 or len(docking_score_keys) == 0:
@@ -775,6 +775,9 @@ def handle_calculate_button():
 	will be added to the provided name and results will be written in the csv
 	format.
 	"""
+	global properties
+	properties = dict()
+
 	global output_text
 	global ignore_textbox_button_value
 	
