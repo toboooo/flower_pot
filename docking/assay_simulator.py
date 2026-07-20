@@ -486,7 +486,7 @@ docking_score_keys):
 		docking_score_keys: tuple of str, the keys for the properties dictionary
 			corresponding to the calculated docking scores.
 	"""
-	global simulator_frame
+	global simulator_window, simulator_frame
 	simulator_window = tk.Toplevel(main_window)
 	simulator_window.resizable(False, False)
 	simulator_window.title("Assay Simulator")
@@ -748,3 +748,5 @@ docking_score_keys):
 	write_all_button.grid(row=14, column=3, sticky="nsew")
 	write_all_warn_label = tk.Label(simulator_frame, text="\n")
 	write_all_warn_label.grid(row=14, column=4, columnspan=18, sticky="nsew")
+
+	return simulator_window

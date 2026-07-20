@@ -73,6 +73,32 @@ def activate_egg_button():
 		print_egg_button_value.set(False)
 		print_egg_warning.config(text="\n")
 
+def disable_buttons():
+	"""Disables the assay simulator and go buttons when calculations are running
+	to prevent multiple clicks."""
+	global go_button, assay_button
+	go_button.config(state=tk.DISABLED)
+	assay_button.config(state=tk.DISABLED)
+	go_button.update()
+	assay_button.update()
+
+def enable_buttons():
+	"""Enables the assay simulator and go buttons after the calculation
+	function is finished."""
+	global go_button, assay_button
+	go_button.update()
+	assay_button.update()
+	go_button.config(state=tk.NORMAL)
+	assay_button.config(state=tk.NORMAL)
+
+def on_simulator_close(event):
+	"""Releases the assay and go buttons once the simulator window is closed."""
+	global simulator_window
+	global assay_button
+	if event.widget != simulator_window:
+		return
+	enable_buttons()
+
 def run_assay_simulator():
 	"""Starts the assay simulator pop-up window if docking scores calculations
 	have been performed and the data is available in the global 'properties'
@@ -86,8 +112,12 @@ def run_assay_simulator():
 		if properties.get(score_key) is not None)
 	if len(properties) == 0 or len(docking_score_keys) == 0:
 		return
-	build_simulator_window(window, mols, file_names, properties,
-		docking_score_keys)
+	global simulator_window
+	simulator_window = build_simulator_window(window, mols, file_names,
+		properties, docking_score_keys)
+	simulator_window.bind("<Destroy>", on_simulator_close)
+	# Prevent multiple simulator windows from opening
+	disable_buttons()
 
 def activate_docking_warning():
 	"""Highlights a warning message to the user about the computational cost of
@@ -775,6 +805,10 @@ def handle_calculate_button():
 	will be added to the provided name and results will be written in the csv
 	format.
 	"""
+	global go_button, assay_button
+	# Disable the buttons so multiple clicks won't be registered
+	disable_buttons()
+
 	global properties
 	properties = dict()
 
@@ -812,6 +846,7 @@ def handle_calculate_button():
 	mols, errs, names = get_mol_list(smiles_strings, names=names)
 	if len(mols) == 0:
 		print("ERROR: No valid SMILES strings were found.")
+		enable_buttons()
 		return
 
 	global file_names
@@ -875,6 +910,7 @@ def handle_calculate_button():
 			"'.csv', defaulting to a CSV file '%s'." % out_filename)
 	out_filename = os.path.join(out_foldername, out_filename)
 	if not check_file_writeable(out_filename):
+		enable_buttons()
 		return
 	print("Writing data to %s..." % out_filename)
 	if out_filename.endswith(".csv"):
@@ -883,6 +919,9 @@ def handle_calculate_button():
 	elif out_filename.endswith(".xlsx"):
 		write_data_xlsx_textbox(out_filename, smiles_strings, file_names, errs,
 			properties, prop_key_list)
+
+	# Enable the buttons once done
+	enable_buttons()
 
 
 if __name__ == "__main__":
